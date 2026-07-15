@@ -47,3 +47,13 @@ body,
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8; /* Slate 400 */
 }
+
+.bg-beehive {
+  background-color: #f8fafc; /* slate-50 background base */
+  
+  /* Seamless, mathematically repeating SVG honeycomb paths */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0 L56 16 V48 L28 64 L0 48 V16 Z M28 64 V96' fill='none' stroke='%23cbd5e1' stroke-width='1.2' stroke-opacity='0.3'/%3E%3C/svg%3E");
+  
+  /* Forces the vector cells to scale exactly to interlocking alignment boundaries */
+  background-size: 56px 96px;
+}

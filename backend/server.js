@@ -7,6 +7,7 @@ const cors = require('cors'); //ByPasses security for browser
 const mongoose = require('mongoose');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const projectRoutes = require('./routes/projectRoutes');
 
 
 const app = express();// Initializing the app
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors()); // Enables CORS
 app.use(express.json()); // Allows us to parse JSON data
+app.use('/api/projects', projectRoutes);
 
 
 // Sample API Route
