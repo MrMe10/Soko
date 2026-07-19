@@ -3,8 +3,8 @@ import React, { useState, useLayoutEffect, useRef, useMemo } from 'react'
 // ==========================================
 // ADJUST HONEYCOMB CELL SIZE HERE:
 // ==========================================
-const HEX_WIDTH = 70   // Width of a single hexagon (originally 56)
-const HEX_HEIGHT = 80  // Height of a single hexagon (originally 64)
+const HEX_WIDTH = 105   // Width of a single hexagon (originally 56)
+const HEX_HEIGHT = 120  // Height of a single hexagon (originally 64)
 // ==========================================
 
 // Derived layout constants
@@ -26,6 +26,24 @@ interface Cell {
   x: number
   y: number
 }
+
+interface TechLogo {
+  src: string
+  alt: string
+}
+
+const LOGO_SIZE = 40
+
+const techLogos: TechLogo[] = [
+  { src: '/React-Logo.png', alt: 'React' },
+  { src: '/nextjs7685.logowik.com.png', alt: 'Next.js' },
+  { src: '/nodejs-icon.png', alt: 'Node.js' },
+  { src: '/external-mongodb-a-cross-platform-document-oriented-database-program-logo-color-tal-revivo.png', alt: 'MongoDB' },
+  { src: '/express-js2119.logowik.com.png', alt: 'Express' },
+  { src: '/t_supabase-icon9119.logowik.com.png', alt: 'Supabase' },
+  { src: '/angular-icon-logo.png', alt: 'Angular' },
+  { src: '/t_pinecone-database4602.logowik.com.png', alt: 'Pinecone' }
+]
 
 const isNeighbor = (col: number, row: number, hoveredCol: number, hoveredRow: number) => {
   if (col === hoveredCol && row === hoveredRow) return true
@@ -112,10 +130,15 @@ export const InteractiveHoneycomb: React.FC = () => {
         .glowing-hex {
           transform: scale(1.08);
           fill: rgba(59, 130, 246, 0.12);
-          stroke: #3b82f6;
-          stroke-width: 2.2px;
+          stroke: #3b82f6; 
+          stroke-width: 4px;
           filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
           z-index: 10;
+        }
+        .honeycomb-hex-logo {
+          transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+                      filter 1s cubic-bezier(0.16, 1, 0.3, 1);
+          transform-box: view-box;
         }
       `}</style>
       {dimensions.width > 0 && dimensions.height > 0 && (
@@ -152,20 +175,43 @@ export const InteractiveHoneycomb: React.FC = () => {
             const originX = hoveredCell ? hoveredCell.x + halfWidth : x + halfWidth
             const originY = hoveredCell ? hoveredCell.y + halfHeight : y + halfHeight
 
+            const logoIndex = Math.abs(col * 3 + row * 7) % techLogos.length
+            const logo = techLogos[logoIndex]
+
             return (
-              <polygon
-                key={id}
-                points={points}
-                mask={isActive ? undefined : 'url(#honeycomb-mask)'}
-                className={`honeycomb-hex ${
-                  isActive ? 'glowing-hex' : 'fill-transparent stroke-slate-300/30 stroke-[1.2px]'
-                } pointer-events-none`}
-                style={{
-                  transformOrigin: `${originX}px ${originY}px`,
-                }}
-              />
+              <React.Fragment key={id}>
+                <polygon
+                  points={points}
+                  mask={isActive ? undefined : 'url(#honeycomb-mask)'}
+                  className={`honeycomb-hex ${
+                    isActive ? 'glowing-hex' : 'fill-transparent stroke-slate-300/30 stroke-[1.2px]'
+                  } pointer-events-none`}
+                  style={{
+                    transformOrigin: `${originX}px ${originY}px`,
+                  }}
+                />
+                {logo && (
+                  <image
+                    href={logo.src}
+                    x={x + (HEX_WIDTH - LOGO_SIZE) / 2}
+                    y={y + (HEX_HEIGHT - LOGO_SIZE) / 2}
+                    width={LOGO_SIZE}
+                    height={LOGO_SIZE}
+                    mask={isActive ? undefined : 'url(#honeycomb-mask)'}
+                    className="honeycomb-hex-logo pointer-events-none"
+                    style={{
+                      transformOrigin: `${originX}px ${originY}px`,
+                      transform: isActive ? 'scale(1.08)' : 'scale(1)',
+                      filter: isActive 
+                        ? 'brightness(0) opacity(0.7) drop-shadow(0 0 3px rgba(59, 130, 246, 0.4))' 
+                        : 'brightness(0) opacity(0)',
+                    }}
+                  />
+                )}
+              </React.Fragment>
             )
           })}
+          
           {/* Invisible interactive hover catchers (not masked, covers all cells to trigger hover glow) */}
           {hexagons.map(({ id, col, row, x, y }) => {
             const points = `
