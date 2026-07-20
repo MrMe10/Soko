@@ -21,8 +21,14 @@ const OPTIONS = [
   }
 ]
 
-// Adjust ONLY the size of the single hexagon after pressing Continue here:
-const CONFIRMED_HEXAGON_SCALE = 'scale-[2.1] sm:scale-[2.15]'
+// 1. Initial size during selection & gliding to center (original size):
+const INITIAL_HEXAGON_SCALE = 'scale-100'
+
+// 2. Enlarged size for entering Title & Description textboxes:
+const ENLARGED_HEXAGON_SCALE = 'scale-[1.8] sm:scale-[1.85]'
+
+// 3. Third size (a little smaller than original) with Title in the center:
+const FINAL_HEXAGON_SCALE = 'scale-[0.82] sm:scale-[0.85]'
 
 // Step 1 Centering & Fade Speed, Step 2 Scaling Speed:
 const CENTERING_SPEED_MS = 600
@@ -34,6 +40,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
   const [isConfirmed, setIsConfirmed] = useState(false) // Step 1: Fade out elements & glide to center
   const [isScaled, setIsScaled] = useState(false)       // Step 2: Scale up in center
   const [isContentFaded, setIsContentFaded] = useState(false) // Step 3: Fade out text after scale completes
+  const [isSubmitted, setIsSubmitted] = useState(false)       // Step 4: Fade out form elements except project name
 
   const handleSelectType = (type: 'separate' | 'fullstack') => {
     setSelectedType(type)
@@ -55,13 +62,27 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
     }, CENTERING_SPEED_MS + 450)
   }
 
+  const handleResetAnimation = () => {
+    setIsSubmitted(false)
+    setIsContentFaded(false)
+    setIsScaled(false)
+    setIsConfirmed(false)
+  }
+
   const handleFinishCreate = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    onCreateProject({
-      name: projectName.trim() || (selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse'),
-      description: projectDescription.trim(),
-      type: selectedType
-    })
+    if (isSubmitted) return
+
+    // Step 4: Fade away form elements inside the cell, leaving only the project name (Testing mode active)
+    setIsSubmitted(true)
+
+    if (onCreateProject) {
+      console.log('[TESTING MODE] Finished creation workflow for:', {
+        name: projectName.trim() || (selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse'),
+        description: projectDescription.trim(),
+        type: selectedType
+      })
+    }
   }
 
   return (
@@ -87,21 +108,26 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
           const isSelected = selectedType === type
           const isUnselected = !isSelected
 
-          // Calculate precise GPU transform translation to dead center
           let transformClasses = 'translate-x-0 translate-y-0 scale-100'
+
+          // Determine hexagon scale for each phase:
+          let currentScale = INITIAL_HEXAGON_SCALE
+          if (isSubmitted) {
+            currentScale = FINAL_HEXAGON_SCALE // Phase 3: Final title in center (little smaller than original)
+          } else if (isScaled) {
+            currentScale = ENLARGED_HEXAGON_SCALE // Phase 2: Form with title & description textboxes
+          } else {
+            currentScale = INITIAL_HEXAGON_SCALE // Phase 1: Selection & glide to center (original scale-100)
+          }
 
           if (isConfirmed) {
             if (isSelected) {
               if (type === 'separate') {
                 // Left card moves right to center
-                transformClasses = `translate-y-[160px] md:translate-y-0 md:translate-x-[172px] ${
-                  isScaled ? CONFIRMED_HEXAGON_SCALE : 'scale-100'
-                }`
+                transformClasses = `translate-y-[160px] md:translate-y-0 md:translate-x-[172px] ${currentScale}`
               } else {
                 // Right card moves left to center
-                transformClasses = `-translate-y-[160px] md:translate-y-0 md:-translate-x-[172px] ${
-                  isScaled ? CONFIRMED_HEXAGON_SCALE : 'scale-100'
-                }`
+                transformClasses = `-translate-y-[160px] md:translate-y-0 md:-translate-x-[172px] ${currentScale}`
               }
             }
           }
@@ -126,7 +152,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
               <div className="relative w-64 h-72 sm:w-72 sm:h-80 flex items-center justify-center shrink-0">
                 <svg
                   className={`absolute inset-0 w-full h-full overflow-visible transition-all duration-500 ease-in-out ${
-                    isSelected ? (isScaled ? 'drop-shadow-[0_0_40px_rgba(99,102,241,0.65)]' : 'drop-shadow-[0_0_24px_rgba(99,102,241,0.45)]') : 'drop-shadow-md group-hover:drop-shadow-lg'
+                    isSelected ? (isScaled && !isSubmitted ? 'drop-shadow-[0_0_40px_rgba(99,102,241,0.65)]' : 'drop-shadow-[0_0_24px_rgba(99,102,241,0.45)]') : 'drop-shadow-md group-hover:drop-shadow-lg'
                   }`}
                   style={{ overflow: 'visible' }}
                   viewBox="0 0 240 270"
@@ -136,7 +162,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                     points="120,5 230,68 230,195 120,258 10,195 10,68"
                     fill="#ffffff"
                     stroke={isSelected ? '#6366f1' : '#e2e8f0'}
-                    strokeWidth={isSelected ? (isScaled ? '5' : '4') : '2'}
+                    strokeWidth={isSelected ? (isScaled && !isSubmitted ? '5' : '4') : '2'}
                     className="transition-all duration-300 group-hover:stroke-indigo-400"
                   />
                 </svg>
@@ -156,12 +182,12 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                   <p className="text-[11px] leading-relaxed text-slate-500">{desc}</p>
                 </div>
 
-                {/* Name & Description Form (Fades In From Below Upward) */}
+                {/* Name & Description Form (Fades In From Below Upward, Fades Out on Submit) */}
                 {isSelected && (
                   <form
                     onSubmit={handleFinishCreate}
                     className={`absolute z-20 flex flex-col items-center text-center px-1 w-[168px] space-y-1.5 transition-all duration-500 ease-out ${
-                      isContentFaded ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'
+                      isContentFaded && !isSubmitted ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'
                     }`}
                   >
                     <div className="w-full text-left space-y-0.5">
@@ -198,6 +224,19 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                       <ArrowRight className="w-2.5 h-2.5" />
                     </button>
                   </form>
+                )}
+
+                {/* Final Project Title Display (Fades In after Create is clicked) */}
+                {isSelected && (
+                  <div
+                    className={`absolute z-30 flex flex-col items-center justify-center text-center px-4 max-w-[170px] transition-all duration-500 ease-out ${
+                      isSubmitted ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+                    }`}
+                  >
+                    <h3 className="text-base sm:text-[40px] font-bold text-slate-900 leading-snug tracking-tight font-display drop-shadow-sm">
+                      {projectName.trim() || (selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse')}
+                    </h3>
+                  </div>
                 )}
               </div>
             </div>
