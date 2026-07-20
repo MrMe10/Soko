@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Layers, Cpu, ArrowRight, Folder, X } from 'lucide-react'
+import { Layers, Cpu, ArrowRight } from 'lucide-react'
 
 interface CreateProjectViewProps {
   onCreateProject: (project: { name: string; description: string; type: 'separate' | 'fullstack' }) => void
@@ -21,25 +21,44 @@ const OPTIONS = [
   }
 ]
 
-export default function CreateProjectView({ onCreateProject, onCancel }: CreateProjectViewProps) {
-  const [selectedType, setSelectedType] = useState<'separate' | 'fullstack'>('separate')
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [step, setStep] = useState<'select' | 'details'>('select')
+// Adjust ONLY the size of the single hexagon after pressing Continue here:
+const CONFIRMED_HEXAGON_SCALE = 'scale-175 sm:scale-175'
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
-    onCreateProject({ name: name.trim(), description: description.trim(), type: selectedType })
+// Step 1 Centering & Fade Speed, Step 2 Scaling Speed:
+const CENTERING_SPEED_MS = 600
+
+export default function CreateProjectView({ onCreateProject }: CreateProjectViewProps) {
+  const [selectedType, setSelectedType] = useState<'separate' | 'fullstack'>('separate')
+  const [isConfirmed, setIsConfirmed] = useState(false) // Step 1: Fade out elements & glide to center
+  const [isScaled, setIsScaled] = useState(false)       // Step 2: Scale up in center
+
+  const handleContinue = () => {
+    // Step 1: Simultaneously fade out surrounding elements & glide selected card to center
+    setIsConfirmed(true)
+
+    // Step 2: Scale up & glow after centering completes (550ms delay)
+    setTimeout(() => {
+      setIsScaled(true)
+    }, CENTERING_SPEED_MS - 50)
+  }
+
+  const handleFinishCreate = () => {
+    onCreateProject({
+      name: selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse',
+      description: '',
+      type: selectedType
+    })
   }
 
   return (
-    <div className="relative min-h-[75vh] w-full flex flex-col items-center justify-center py-6 px-4">
+    <div className="relative min-h-[75vh] w-full flex flex-col items-center justify-center py-6 px-4 overflow-x-clip">
       {/* Background Subtle Radial Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-      {/* Header */}
-      <div className="text-center max-w-xl mx-auto mb-10 space-y-2">
+      {/* Header (Step 1: Fades out & slides up simultaneously with centering) */}
+      <div className={`text-center max-w-xl mx-auto space-y-2 mb-10 transition-all duration-600 ease-out ${
+        isConfirmed ? 'opacity-0 -translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'
+      }`}>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
           Choose Your Project Setup
         </h2>
@@ -48,21 +67,54 @@ export default function CreateProjectView({ onCreateProject, onCancel }: CreateP
         </p>
       </div>
 
-      {/* Hexagon Options */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-14 w-full max-w-4xl my-4">
+      {/* Hexagon Options Container */}
+      <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-14 my-4 w-full max-w-4xl">
         {OPTIONS.map(({ type, title, desc, Icon }) => {
           const isSelected = selectedType === type
+          const isUnselected = !isSelected
+
+          // Calculate precise GPU transform translation to dead center
+          let transformClasses = 'translate-x-0 translate-y-0 scale-100'
+
+          if (isConfirmed) {
+            if (isSelected) {
+              if (type === 'separate') {
+                // Left card moves right to center
+                transformClasses = `translate-y-[160px] md:translate-y-0 md:translate-x-[172px] ${
+                  isScaled ? CONFIRMED_HEXAGON_SCALE : 'scale-100'
+                }`
+              } else {
+                // Right card moves left to center
+                transformClasses = `-translate-y-[160px] md:translate-y-0 md:-translate-x-[172px] ${
+                  isScaled ? CONFIRMED_HEXAGON_SCALE : 'scale-100'
+                }`
+              }
+            }
+          }
+
+          // Card Visibility & Z-Index
+          const visibilityClasses = isConfirmed && isUnselected
+            ? 'opacity-0 pointer-events-none'
+            : 'opacity-100'
+
+          const interactionClasses = isConfirmed
+            ? isSelected ? 'z-20 cursor-default' : 'z-0 pointer-events-none'
+            : 'z-10 cursor-pointer hover:-translate-y-1'
+
           return (
             <div
               key={type}
-              onClick={() => setSelectedType(type)}
-              className="group relative flex flex-col items-center cursor-pointer select-none transition-all duration-300 transform hover:-translate-y-2"
+              onClick={() => !isConfirmed && setSelectedType(type)}
+              className={`group relative flex flex-col items-center select-none shrink-0 transition-all ${
+                isScaled ? 'duration-500' : 'duration-600'
+              } ease-in-out ${visibilityClasses} ${interactionClasses} ${transformClasses}`}
             >
-              <div className="relative w-64 h-72 sm:w-72 sm:h-80 flex items-center justify-center">
+              <div className="relative w-64 h-72 sm:w-72 sm:h-80 flex items-center justify-center shrink-0">
                 <svg
-                  className={`absolute inset-0 w-full h-full transition-all duration-300 ${
-                    isSelected ? 'drop-shadow-[0_0_22px_rgba(99,102,241,0.45)]' : 'drop-shadow-md group-hover:drop-shadow-lg'
+                  className={`absolute inset-0 w-full h-full overflow-visible transition-all duration-500 ease-in-out ${
+                    isSelected ? (isScaled ? 'drop-shadow-[0_0_40px_rgba(99,102,241,0.65)]' : 'drop-shadow-[0_0_24px_rgba(99,102,241,0.45)]') : 'drop-shadow-md group-hover:drop-shadow-lg'
                   }`}
+                  style={{ overflow: 'visible' }}
                   viewBox="0 0 240 270"
                   fill="none"
                 >
@@ -70,7 +122,7 @@ export default function CreateProjectView({ onCreateProject, onCancel }: CreateP
                     points="120,5 230,68 230,195 120,258 10,195 10,68"
                     fill="#ffffff"
                     stroke={isSelected ? '#6366f1' : '#e2e8f0'}
-                    strokeWidth={isSelected ? '4' : '2'}
+                    strokeWidth={isSelected ? (isScaled ? '5' : '4') : '2'}
                     className="transition-all duration-300 group-hover:stroke-indigo-400"
                   />
                 </svg>
@@ -81,7 +133,7 @@ export default function CreateProjectView({ onCreateProject, onCancel }: CreateP
                   }`}>
                     <Icon className="w-7 h-7" />
                   </div>
-                  <h3 className={`text-base font-bold transition-colors ${isSelected ? 'text-indigo-600' : 'text-slate-900 group-hover:text-indigo-600'}`}>
+                  <h3 className={`text-base font-bold transition-colors duration-300 ${isSelected ? 'text-indigo-600' : 'text-slate-900 group-hover:text-indigo-600'}`}>
                     {title}
                   </h3>
                   <p className="text-[11px] leading-relaxed text-slate-500">{desc}</p>
@@ -92,70 +144,18 @@ export default function CreateProjectView({ onCreateProject, onCancel }: CreateP
         })}
       </div>
 
-      {/* Action Footer / Step Form */}
-      <div className="w-full max-w-md mt-6 space-y-4">
-        {step === 'select' ? (
-          <div className="flex justify-center items-center">
-            <button
-              type="button"
-              onClick={() => setStep('details')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <span>Continue with {selectedType === 'separate' ? 'Separate' : 'Fullstack'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Project Details</h4>
-                <p className="text-[11px] text-slate-500">
-                  Selected: <span className="font-semibold text-indigo-600 uppercase font-mono">{selectedType}</span>
-                </p>
-              </div>
-              <button type="button" onClick={() => setStep('select')} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">Project Name</label>
-              <div className="relative">
-                <Folder className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Soko Storehouse Core"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief summary of your project..."
-                rows={2}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <button type="button" onClick={() => setStep('select')} className="px-4 py-2 border border-slate-200 hover:bg-slate-100 bg-white text-slate-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer">
-                Back
-              </button>
-              <button type="submit" disabled={!name.trim()} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2 text-xs font-semibold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                Create Project
-              </button>
-            </div>
-          </form>
-        )}
+      {/* Action Footer (Step 1: Fades out & slides down simultaneously with centering) */}
+      <div className={`w-full max-w-md mt-6 flex justify-center items-center transition-all duration-600 ease-out ${
+        isConfirmed ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'
+      }`}>
+        <button
+          type="button"
+          onClick={handleContinue}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <span>Continue with {selectedType === 'separate' ? 'Separate' : 'Fullstack'}</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   )
