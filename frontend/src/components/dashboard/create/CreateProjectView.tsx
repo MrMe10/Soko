@@ -22,15 +22,23 @@ const OPTIONS = [
 ]
 
 // Adjust ONLY the size of the single hexagon after pressing Continue here:
-const CONFIRMED_HEXAGON_SCALE = 'scale-175 sm:scale-175'
+const CONFIRMED_HEXAGON_SCALE = 'scale-[2.1] sm:scale-[2.15]'
 
 // Step 1 Centering & Fade Speed, Step 2 Scaling Speed:
 const CENTERING_SPEED_MS = 600
 
 export default function CreateProjectView({ onCreateProject }: CreateProjectViewProps) {
   const [selectedType, setSelectedType] = useState<'separate' | 'fullstack'>('separate')
+  const [projectName, setProjectName] = useState('Decoupled Storehouse')
+  const [projectDescription, setProjectDescription] = useState('')
   const [isConfirmed, setIsConfirmed] = useState(false) // Step 1: Fade out elements & glide to center
   const [isScaled, setIsScaled] = useState(false)       // Step 2: Scale up in center
+  const [isContentFaded, setIsContentFaded] = useState(false) // Step 3: Fade out text after scale completes
+
+  const handleSelectType = (type: 'separate' | 'fullstack') => {
+    setSelectedType(type)
+    setProjectName(type === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse')
+  }
 
   const handleContinue = () => {
     // Step 1: Simultaneously fade out surrounding elements & glide selected card to center
@@ -40,12 +48,18 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
     setTimeout(() => {
       setIsScaled(true)
     }, CENTERING_SPEED_MS - 50)
+
+    // Step 3: Fade out text & cell contents upwards AFTER scale animation completes (1050ms total delay)
+    setTimeout(() => {
+      setIsContentFaded(true)
+    }, CENTERING_SPEED_MS + 450)
   }
 
-  const handleFinishCreate = () => {
+  const handleFinishCreate = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     onCreateProject({
-      name: selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse',
-      description: '',
+      name: projectName.trim() || (selectedType === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse'),
+      description: projectDescription.trim(),
       type: selectedType
     })
   }
@@ -104,7 +118,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
           return (
             <div
               key={type}
-              onClick={() => !isConfirmed && setSelectedType(type)}
+              onClick={() => !isConfirmed && handleSelectType(type)}
               className={`group relative flex flex-col items-center select-none shrink-0 transition-all ${
                 isScaled ? 'duration-500' : 'duration-600'
               } ease-in-out ${visibilityClasses} ${interactionClasses} ${transformClasses}`}
@@ -127,7 +141,10 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                   />
                 </svg>
 
-                <div className="relative z-10 flex flex-col items-center text-center p-6 space-y-3 max-w-[200px]">
+                {/* Initial Cell Content (Fades Out Upward) */}
+                <div className={`relative z-10 flex flex-col items-center text-center p-6 space-y-3 max-w-[200px] transition-all duration-500 ease-out ${
+                  isSelected && isContentFaded ? 'opacity-0 -translate-y-10 pointer-events-none' : 'opacity-100 translate-y-0'
+                }`}>
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md ${
                     isSelected ? 'bg-indigo-600 text-white shadow-indigo-600/30 scale-110' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 group-hover:scale-105'
                   }`}>
@@ -138,6 +155,50 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                   </h3>
                   <p className="text-[11px] leading-relaxed text-slate-500">{desc}</p>
                 </div>
+
+                {/* Name & Description Form (Fades In From Below Upward) */}
+                {isSelected && (
+                  <form
+                    onSubmit={handleFinishCreate}
+                    className={`absolute z-20 flex flex-col items-center text-center px-1 w-[168px] space-y-1.5 transition-all duration-500 ease-out ${
+                      isContentFaded ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'
+                    }`}
+                  >
+                    <div className="w-full text-left space-y-0.5">
+                      <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider block pl-0.5">
+                        Project Name
+                      </label>
+                      <input
+                        type="text"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        placeholder="e.g. My Storehouse"
+                        className="w-full text-[10.5px] px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50/90 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none text-slate-800 font-semibold transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <div className="w-full text-left space-y-0.5">
+                      <label className="text-[9px] font-extrabold text-slate-600 uppercase tracking-wider block pl-0.5">
+                        Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={projectDescription}
+                        onChange={(e) => setProjectDescription(e.target.value)}
+                        placeholder="What are you building?"
+                        className="w-full text-[10px] px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50/90 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none text-slate-700 resize-none transition-all shadow-inner leading-relaxed"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="mt-0.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-md px-5 py-1 text-[10px] font-bold shadow-sm shadow-indigo-600/30 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <span>Create</span>
+                      <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           )
