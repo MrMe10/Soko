@@ -1,14 +1,15 @@
-// src/App.tsx
 import { useState } from 'react'
-import { LandingView } from './components/landing_page/LandingView' 
-import Sidebar from './components/dashboard/Sidebar'
-import Header from './components/dashboard/Header'
-import ProjectsView, { type Project } from './components/dashboard/project_view/ProjectsView'
-import CreateProjectView from './components/dashboard/create/CreateProjectView'
-import SettingsView from './components/dashboard/general_setting/SettingsView'
+import Sidebar from './Sidebar'
+import Header from './Header'
+import ProjectsView, { type Project } from './project_view/ProjectsView'
+import CreateProjectView from './create/CreateProjectView'
+import SettingsView from './general_setting/SettingsView'
 
-export default function App() {
-  const [view, setView] = useState<'landing' | 'dashboard'>('landing')
+interface DashboardViewProps {
+  onBackToLanding?: () => void
+}
+
+export function DashboardView({ onBackToLanding }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<string>('projects')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -37,7 +38,7 @@ export default function App() {
     setActiveTab('projects')
   }
 
-  // Render active view based on tab
+  // Render correct view based on active tab
   const renderActiveView = () => {
     switch (activeTab) {
       case 'projects':
@@ -72,45 +73,27 @@ export default function App() {
     }
   }
 
-  // ==========================================
-  // 🏁 VIEW RENDERING SPACE 1: Public Landing Module
-  // ==========================================
-  if (view === 'landing') {
-    return (
-      <LandingView
-        onEnterDashboard={() => {
-          setView('dashboard')
-          setActiveTab('projects')
-        }}
-      />
-    )
-  }
-
-  // ==========================================
-  // 🏁 VIEW RENDERING SPACE 2: Cohesive Dashboard View
-  // ==========================================
   return (
     <div className="flex h-screen w-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
       
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Desktop Sidebar */}
       <div className="hidden md:flex h-full">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onLogoClick={() => {
-            setView('landing')
-            setActiveTab('projects')
-          }}
+          onLogoClick={onBackToLanding}
         />
       </div>
 
       {/* Mobile Sidebar overlay/drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden flex">
+          {/* Backdrop */}
           <div
             onClick={() => setMobileMenuOpen(false)}
             className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300"
           />
+          {/* Drawer content */}
           <div className="relative flex flex-col h-full w-72 max-w-[80vw]">
             <Sidebar
               activeTab={activeTab}
@@ -119,9 +102,8 @@ export default function App() {
                 setMobileMenuOpen(false)
               }}
               onLogoClick={() => {
-                setView('landing')
-                setActiveTab('projects')
                 setMobileMenuOpen(false)
+                if (onBackToLanding) onBackToLanding()
               }}
             />
           </div>

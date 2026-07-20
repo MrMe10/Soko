@@ -1,6 +1,6 @@
 import { Folder, Layers, Cpu, Clock, ChevronRight, Activity, Plus } from 'lucide-react'
 
-interface Project {
+export interface Project {
   id: string
   name: string
   description: string

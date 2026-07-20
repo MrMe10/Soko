@@ -149,7 +149,7 @@ export const InteractiveHoneycomb: React.FC = () => {
         >
           <defs>
             <radialGradient id="honeycomb-mask-grad" cx="50%" cy="50%" r="50%">
-              <stop offset="35%" stopColor="white" />
+              <stop offset="60%" stopColor="white" />
               <stop offset="80%" stopColor="black" />
             </radialGradient>
             <mask id="honeycomb-mask">

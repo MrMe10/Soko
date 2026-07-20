@@ -60,33 +60,6 @@ db.on('disconnected', () => {
 });
 
 
-const express = require('express');
-const router = express.Router();
-const Project = require('./models/Project'); // Import our model
-
-// POST endpoint to create a new project
-router.post('/api/projects', async (req, res) => {
-  try {
-    const { name, description, type } = req.body;
-
-    // Use .create() as a shortcut to instantiate and save to MongoDB at once
-    const newProject = await Project.create({
-      name,
-      description,
-      type
-      // status defaults to 'synced' as configured in the schema
-    });
-
-    // Send back the saved document containing its MongoDB generated _id
-    res.status(201).json(newProject);
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving project data', error: error.message });
-  }
-});
-
-module.exports = router;
-
-
 
 
 

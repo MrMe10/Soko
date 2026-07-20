@@ -85,34 +85,7 @@ export default function Sidebar({
             </button>
           )
         })}
-      </nav>
-
-      {/* Sidebar Footer with system health */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50/50 font-mono text-[11px] text-slate-600 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Core Status
-          </span>
-          <span className="text-emerald-600 font-bold">ACTIVE</span>
-        </div>
-
-        {/* Capacity Bar */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-slate-500">
-            <span>WHSE Storage</span>
-            <span>73.2%</span>
-          </div>
-          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full animate-pulse-slow" style={{ width: '73.2%' }} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-slate-455 text-[10px] pt-1">
-          <span>ZONE: US-EAST-01</span>
-          <span>NODE: #718</span>
-        </div>
-      </div>
+      </nav>    
     </aside>
   )
 }
