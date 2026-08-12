@@ -36,8 +36,7 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
       {/* Floating Dragged Hexagon Preview */}
       {draggedTech && dragPos && (() => {
         const hoveredNode = hoveredCellId ? SURROUNDING_NODES.find((n) => n.id === hoveredCellId) : null
-        const isHoveredInvalid =
-          hoveredNode && hoveredNode.category !== draggedTech.category && hoveredNode.category !== 'Extra Tech'
+        const isHoveredInvalid = Boolean(hoveredNode && hoveredNode.category !== draggedTech.category)
         const details = TECH_DETAILS[draggedTech.name] || {}
         const LogoImg = details.logo
         const MockupIcon = details.mockupIcon || Layers
@@ -65,14 +64,14 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center pointer-events-none space-y-1">
                 {LogoImg ? (
-                  <img src={LogoImg} alt={draggedTech.name} className="w-6 h-6 object-contain" />
+                  <img src={LogoImg} alt={draggedTech.name} className="w-8 h-8 object-contain" />
                 ) : (
                   <div
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                       isHoveredInvalid ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600'
                     }`}
                   >
-                    <MockupIcon className="w-4 h-4" />
+                    <MockupIcon className="w-4.5 h-4.5" />
                   </div>
                 )}
                 <span className="text-[10.5px] font-extrabold text-slate-900 leading-tight max-w-[80px] break-words">
@@ -109,19 +108,19 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
               opacity: 1
             }}
           >
-            <div className="relative w-[76px] h-[86px] sm:w-[82px] sm:h-[92px] flex flex-col items-center justify-center">
+            <div className="relative w-[86px] h-[96px] sm:w-[94px] sm:h-[104px] flex flex-col items-center justify-center">
               <svg viewBox="0 0 120 135" className="absolute inset-0 w-full h-full overflow-visible drop-shadow-sm">
                 <polygon points="60,2.5 115,34 115,96 60,127.5 5,96 5,34" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.8" />
               </svg>
               <div className="relative z-10 flex flex-col items-center justify-center text-center p-1.5 space-y-1">
                 {LogoImg ? (
-                  <img src={LogoImg} alt={returningTech.name} className="w-6 h-6 object-contain" />
+                  <img src={LogoImg} alt={returningTech.name} className="w-9 h-9 object-contain" />
                 ) : (
-                  <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center">
-                    <MockupIcon className="w-3.5 h-3.5" />
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center">
+                    <MockupIcon className="w-5 h-5" />
                   </div>
                 )}
-                <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-900 leading-tight max-w-[58px] truncate">
+                <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-900 leading-tight max-w-[74px] sm:max-w-[80px] text-center line-clamp-2 break-words">
                   {returningTech.name}
                 </span>
               </div>

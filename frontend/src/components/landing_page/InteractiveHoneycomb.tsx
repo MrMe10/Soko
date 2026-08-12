@@ -1,10 +1,10 @@
-import React, { useState, useLayoutEffect, useRef, useMemo } from 'react'
+import React, { useState, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 
 // ==========================================
 // ADJUST HONEYCOMB CELL SIZE HERE:
 // ==========================================
-const HEX_WIDTH = 105   // Width of a single hexagon (originally 56)
-const HEX_HEIGHT = 120  // Height of a single hexagon (originally 64)
+const HEX_WIDTH = 105   // Width of a single hexagon
+const HEX_HEIGHT = 120  // Height of a single hexagon
 // ==========================================
 
 // Derived layout constants
@@ -25,6 +25,9 @@ interface Cell {
   row: number
   x: number
   y: number
+  centerX: number
+  centerY: number
+  points: string
 }
 
 interface TechLogo {
@@ -69,6 +72,7 @@ const isNeighbor = (col: number, row: number, hoveredCol: number, hoveredRow: nu
 
 export const InteractiveHoneycomb: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number; x: number; y: number } | null>(null)
 
@@ -101,12 +105,17 @@ export const InteractiveHoneycomb: React.FC = () => {
         for (let row = -1; row < rows; row++) {
           const x = col * colWidth
           const y = row * rowHeight + (Math.abs(col) % 2 === 1 ? oddRowOffset : 0)
+          const points = `${x + halfWidth},${y} ${x + fullWidth},${y + quarterHeight} ${x + fullWidth},${y + threeQuarterHeight} ${x + halfWidth},${y + fullHeight} ${x},${y + threeQuarterHeight} ${x},${y + quarterHeight}`
+
           arr.push({
             id: `${col}-${row}`,
             col,
             row,
             x,
             y,
+            centerX: x + halfWidth,
+            centerY: y + halfHeight,
+            points,
           })
         }
       }
@@ -114,16 +123,43 @@ export const InteractiveHoneycomb: React.FC = () => {
     return arr
   }, [cols, rows])
 
+  // Continuous pointer movement tracking ensures fast cursor swipes never miss cells
+  const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (!svgRef.current || hexagons.length === 0) return
+    const rect = svgRef.current.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
+
+    let closest: Cell | null = null
+    let minDistSq = (HEX_WIDTH * 0.55) ** 2
+
+    for (let i = 0; i < hexagons.length; i++) {
+      const cell = hexagons[i]
+      const dx = cell.centerX - mx
+      const dy = cell.centerY - my
+      const distSq = dx * dx + dy * dy
+      if (distSq < minDistSq) {
+        minDistSq = distSq
+        closest = cell
+      }
+    }
+
+    if (closest) {
+      setHoveredCell(prev => (prev?.col === closest!.col && prev?.row === closest!.row ? prev : { col: closest.col, row: closest.row, x: closest.x, y: closest.y }))
+    } else {
+      setHoveredCell(null)
+    }
+  }, [hexagons])
 
   return (
     <div ref={containerRef} className="absolute inset-0 z-0 w-full h-full overflow-hidden select-none">
       <style>{`
         .honeycomb-hex {
           transform: scale(1);
-          transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1),
-                      fill 1s cubic-bezier(0.16, 1, 0.3, 1),
-                      stroke 1s cubic-bezier(0.16, 1, 0.3, 1),
-                      filter 1s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      fill 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      stroke 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
           transform-box: view-box;
           z-index: 1;
         }
@@ -136,16 +172,18 @@ export const InteractiveHoneycomb: React.FC = () => {
           z-index: 10;
         }
         .honeycomb-hex-logo {
-          transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1),
-                      filter 1s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
           transform-box: view-box;
         }
       `}</style>
       {dimensions.width > 0 && dimensions.height > 0 && (
         <svg
-          className="w-full h-full block"
+          ref={svgRef}
+          className="w-full h-full block cursor-pointer"
           style={{ pointerEvents: 'auto' }}
-          onMouseLeave={() => setHoveredCell(null)}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => setHoveredCell(null)}
         >
           <defs>
             <radialGradient id="honeycomb-mask-grad" cx="50%" cy="50%" r="50%">
@@ -156,22 +194,12 @@ export const InteractiveHoneycomb: React.FC = () => {
               <rect width="100%" height="100%" fill="url(#honeycomb-mask-grad)" />
             </mask>
           </defs>
-          {/* Draw hexagons (visual only, pointer-events disabled to let catcher handle interaction) */}
-          {hexagons.map(({ id, col, row, x, y }) => {
+
+          {hexagons.map(({ id, col, row, x, y, points }) => {
             const isActive = hoveredCell
               ? isNeighbor(col, row, hoveredCell.col, hoveredCell.row)
               : false
 
-            const points = `
-              ${x + halfWidth},${y}
-              ${x + fullWidth},${y + quarterHeight}
-              ${x + fullWidth},${y + threeQuarterHeight}
-              ${x + halfWidth},${y + fullHeight}
-              ${x},${y + threeQuarterHeight}
-              ${x},${y + quarterHeight}
-            `.trim().replace(/\s+/g, ' ')
-
-            // Use the hovered cell's center as the scaling origin for all active cells
             const originX = hoveredCell ? hoveredCell.x + halfWidth : x + halfWidth
             const originY = hoveredCell ? hoveredCell.y + halfHeight : y + halfHeight
 
@@ -209,32 +237,6 @@ export const InteractiveHoneycomb: React.FC = () => {
                   />
                 )}
               </React.Fragment>
-            )
-          })}
-          
-          {/* Invisible interactive hover catchers (not masked, covers all cells to trigger hover glow) */}
-          {hexagons.map(({ id, col, row, x, y }) => {
-            const points = `
-              ${x + halfWidth},${y}
-              ${x + fullWidth},${y + quarterHeight}
-              ${x + fullWidth},${y + threeQuarterHeight}
-              ${x + halfWidth},${y + fullHeight}
-              ${x},${y + threeQuarterHeight}
-              ${x},${y + quarterHeight}
-            `.trim().replace(/\s+/g, ' ')
-
-            return (
-              <polygon
-                key={`catcher-${id}`}
-                points={points}
-                fill="transparent"
-                stroke="transparent"
-                className="cursor-pointer"
-                style={{
-                  pointerEvents: 'auto',
-                }}
-                onMouseEnter={() => setHoveredCell({ col, row, x, y })}
-              />
             )
           })}
         </svg>

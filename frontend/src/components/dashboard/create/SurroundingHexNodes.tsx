@@ -35,13 +35,6 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
 }) => {
   if (!isSelected) return null
 
-  const isFirstFourFilled = Boolean(
-    assignedTechs['top-left'] &&
-    assignedTechs['top-right'] &&
-    assignedTechs['left'] &&
-    assignedTechs['right']
-  )
-
   const sortedNodes = [...SURROUNDING_NODES].sort((a, b) => {
     const aAssigned = Boolean(assignedTechs[a.id])
     const bAssigned = Boolean(assignedTechs[b.id])
@@ -52,11 +45,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
       if (hovered) return 3
       if (assigned) return 2
       const cat = SURROUNDING_NODES.find((n) => n.id === id)?.category
-      const isComp = draggedTech
-        ? cat === 'Extra Tech'
-          ? isFirstFourFilled
-          : cat === draggedTech.category
-        : false
+      const isComp = draggedTech ? cat === draggedTech.category : false
       if (isComp) return 1
       return 0
     }
@@ -71,11 +60,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
         const isHoveredTarget = hoveredCellId === id
         const isDraggingActive = Boolean(draggedTech)
 
-        const isCompatible = draggedTech
-          ? nodeCategory === 'Extra Tech'
-            ? isFirstFourFilled
-            : nodeCategory === draggedTech.category
-          : false
+        const isCompatible = draggedTech ? nodeCategory === draggedTech.category : false
 
         const isHoveredValid = isHoveredTarget && isCompatible
         const isHoveredInvalid = isHoveredTarget && !isCompatible
@@ -168,7 +153,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                 }`}
               >
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                     assignedTech
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                       : isHoveredValid
@@ -181,9 +166,9 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                   }`}
                 >
                   {assignedTech && AssignedLogo ? (
-                    <img src={AssignedLogo} alt={assignedTech} className="w-5 h-5 object-contain" />
+                    <img src={AssignedLogo} alt={assignedTech} className="w-6 h-6 object-contain" />
                   ) : (
-                    <AssignedMockIcon className="w-5 h-5" />
+                    <AssignedMockIcon className="w-5.5 h-5.5" />
                   )}
                 </div>
                 <span
@@ -197,12 +182,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                       : 'font-semibold text-slate-400'
                   }`}
                 >
-                  {assignedTech ||
-                    (isHoveredInvalid
-                      ? nodeCategory === 'Extra Tech' && !isFirstFourFilled
-                        ? 'Fill 4 Primary Layers'
-                        : 'Mismatched Layer'
-                      : label)}
+                  {assignedTech || (isHoveredInvalid ? 'Mismatched Layer' : label)}
                 </span>
                 {assignedTech ? (
                   <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100 uppercase font-mono">

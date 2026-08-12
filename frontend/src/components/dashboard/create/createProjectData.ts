@@ -10,7 +10,6 @@ import {
   Cpu,
   Database,
   Shield,
-  Plus,
   Zap,
   Code2,
   Terminal,
@@ -19,7 +18,9 @@ import {
   KeyRound,
   Lock,
   HardDrive,
-  Boxes
+  Boxes,
+  Mail,
+  Server
 } from 'lucide-react'
 
 export interface ProjectOption {
@@ -63,8 +64,8 @@ export const SURROUNDING_NODES: SurroundingNode[] = [
   { id: 'top-left', label: 'Frontend', category: 'Frontend', Icon: Layers, dx: -110, dy: -190 },
   { id: 'top-right', label: 'Backend', category: 'Backend', Icon: Cpu, dx: 110, dy: -190 },
   { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
-  { id: 'bottom-right', label: 'Extra Tech', category: 'Extra Tech', Icon: Plus, dx: 110, dy: 190 },
-  { id: 'bottom-left', label: 'Extra Tech', category: 'Extra Tech', Icon: Plus, dx: -110, dy: 190 },
+  { id: 'bottom-right', label: 'Hosting', category: 'Hosting', Icon: Server, dx: 110, dy: 190 },
+  { id: 'bottom-left', label: 'Email Service', category: 'Email Service', Icon: Mail, dx: -110, dy: 190 },
   { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
 ]
 
@@ -84,6 +85,14 @@ export const TECH_SECTIONS: TechSection[] = [
   {
     category: 'Database',
     techs: ['PostgreSQL', 'MongoDB', 'Redis', 'Prisma', 'Pinecone']
+  },
+  {
+    category: 'Email Service',
+    techs: ['Resend', 'SendGrid', 'Postmark', 'Nodemailer', 'AWS SES']
+  },
+  {
+    category: 'Hosting',
+    techs: ['Vercel', 'AWS', 'Netlify', 'Render', 'Docker']
   }
 ]
 
@@ -107,7 +116,17 @@ export const TECH_DETAILS: Record<string, { logo?: string; mockupIcon?: React.Co
   'MongoDB': { logo: '/external-mongodb-a-cross-platform-document-oriented-database-program-logo-color-tal-revivo.png' },
   'Redis': { mockupIcon: HardDrive },
   'Prisma': { mockupIcon: Boxes },
-  'Pinecone': { logo: '/t_pinecone-database4602.logowik.com.png' }
+  'Pinecone': { logo: '/t_pinecone-database4602.logowik.com.png' },
+  'Resend': { mockupIcon: Mail },
+  'SendGrid': { mockupIcon: Mail },
+  'Postmark': { mockupIcon: Mail },
+  'Nodemailer': { mockupIcon: Mail },
+  'AWS SES': { mockupIcon: Mail },
+  'Vercel': { mockupIcon: Server },
+  'AWS': { mockupIcon: Server },
+  'Netlify': { mockupIcon: Server },
+  'Render': { mockupIcon: Server },
+  'Docker': { mockupIcon: Server }
 }
 
 // 1. Initial size during selection & gliding to center:
@@ -125,8 +144,8 @@ export const PRE_RESIZE_SCALE = 0.5
 // Step 1 Centering & Fade Speed:
 export const CENTERING_SPEED_MS = 600
 
-export const STEP_CATEGORIES = ['Frontend', 'Backend', 'Auth', 'Database']
-export const STEP_NODE_KEYS = ['top-left', 'top-right', 'left', 'right']
+export const STEP_CATEGORIES = ['Frontend', 'Backend', 'Auth', 'Database', 'Email Service', 'Hosting']
+export const STEP_NODE_KEYS = ['top-left', 'top-right', 'left', 'right', 'bottom-left', 'bottom-right']
 
 export const LOADING_MESSAGES = [
   'Synthesizing architecture & dependencies...',

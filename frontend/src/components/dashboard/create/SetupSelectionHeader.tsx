@@ -16,8 +16,8 @@ interface SetupSelectionHeaderProps {
 
 export const SetupSelectionHeader: React.FC<SetupSelectionHeaderProps> = ({
   isConfirmed,
-  selectedType,
-  onContinue
+  selectedType: _selectedType,
+  onContinue: _onContinue
 }) => {
   return (
     <>

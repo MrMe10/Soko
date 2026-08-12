@@ -15,7 +15,8 @@ import {
   ENLARGED_HEXAGON_SCALE,
   FINAL_HEXAGON_SCALE,
   CENTERING_SPEED_MS,
-  LOADING_MESSAGES
+  LOADING_MESSAGES,
+  STEP_CATEGORIES
 } from './createProjectData'
 import { SetupSelectionHeader, SetupSelectionFooter } from './SetupSelectionHeader'
 import { ProjectDetailsForm } from './ProjectDetailsForm'
@@ -130,19 +131,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
       let isMatch = false
       if (cellId && draggedTech) {
         const targetNode = SURROUNDING_NODES.find((n) => n.id === cellId)
-        const isFirst4Filled = Boolean(
-          assignedTechs['top-left'] &&
-          assignedTechs['top-right'] &&
-          assignedTechs['left'] &&
-          assignedTechs['right']
-        )
-
-        isMatch = Boolean(
-          targetNode && (
-            targetNode.category === draggedTech.category ||
-            (targetNode.category === 'Extra Tech' && isFirst4Filled)
-          )
-        )
+        isMatch = Boolean(targetNode && targetNode.category === draggedTech.category)
 
         if (isMatch) {
           setAssignedTechs((prev) => ({
@@ -151,7 +140,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
           }))
 
           // Automatically transition to next category step after selecting a tech pill
-          if (activeStepIndex < 3) {
+          if (activeStepIndex < STEP_CATEGORIES.length - 1) {
             setTimeout(() => {
               handleStepChange(activeStepIndex + 1)
             }, 350)
