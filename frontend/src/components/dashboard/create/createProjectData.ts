@@ -20,7 +20,8 @@ import {
   HardDrive,
   Boxes,
   Mail,
-  Server
+  Server,
+  Globe
 } from 'lucide-react'
 
 export interface ProjectOption {
@@ -59,8 +60,8 @@ export const OPTIONS: ProjectOption[] = [
   }
 ]
 
-// 6 surrounding nodes pushing out to each adjacent side of the hexagon
-export const SURROUNDING_NODES: SurroundingNode[] = [
+// 6 surrounding nodes for Decoupled / Separate architecture
+export const SURROUNDING_NODES_SEPARATE: SurroundingNode[] = [
   { id: 'top-left', label: 'Frontend', category: 'Frontend', Icon: Layers, dx: -110, dy: -190 },
   { id: 'top-right', label: 'Backend', category: 'Backend', Icon: Cpu, dx: 110, dy: -190 },
   { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
@@ -69,14 +70,27 @@ export const SURROUNDING_NODES: SurroundingNode[] = [
   { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
 ]
 
-export const TECH_SECTIONS: TechSection[] = [
+// 6 surrounding nodes for Fullstack architecture (Frontend & Backend both powered by Fullstack Framework)
+export const SURROUNDING_NODES_FULLSTACK: SurroundingNode[] = [
+  { id: 'top-left', label: 'Frontend', category: 'Fullstack Framework', Icon: Layers, dx: -110, dy: -190 },
+  { id: 'top-right', label: 'Backend', category: 'Fullstack Framework', Icon: Cpu, dx: 110, dy: -190 },
+  { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
+  { id: 'bottom-right', label: 'Hosting', category: 'Hosting', Icon: Server, dx: 110, dy: 190 },
+  { id: 'bottom-left', label: 'Email Service', category: 'Email Service', Icon: Mail, dx: -110, dy: 190 },
+  { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
+]
+
+export const getSurroundingNodes = (type: 'separate' | 'fullstack'): SurroundingNode[] =>
+  type === 'fullstack' ? SURROUNDING_NODES_FULLSTACK : SURROUNDING_NODES_SEPARATE
+
+export const TECH_SECTIONS_SEPARATE: TechSection[] = [
   {
     category: 'Frontend',
-    techs: ['React', 'Next.js', 'Tailwind CSS', 'TypeScript', 'Vite']
+    techs: ['React', 'Vue.js', 'Svelte', 'Tailwind CSS', 'TypeScript', 'Vite']
   },
   {
     category: 'Backend',
-    techs: ['Node.js', 'Express', 'Fastify', 'GraphQL', 'Python']
+    techs: ['Node.js', 'Express', 'Fastify', 'NestJS', 'GraphQL', 'Python']
   },
   {
     category: 'Auth',
@@ -96,15 +110,49 @@ export const TECH_SECTIONS: TechSection[] = [
   }
 ]
 
+export const TECH_SECTIONS_FULLSTACK: TechSection[] = [
+  {
+    category: 'Fullstack Framework',
+    techs: ['Next.js', 'Remix', 'Nuxt.js', 'SvelteKit', 'Astro', 'Laravel']
+  },
+  {
+    category: 'Auth',
+    techs: ['Clerk', 'NextAuth', 'Supabase Auth', 'OAuth 2.0', 'JWT']
+  },
+  {
+    category: 'Database',
+    techs: ['PostgreSQL', 'MongoDB', 'Redis', 'Prisma', 'Pinecone']
+  },
+  {
+    category: 'Email Service',
+    techs: ['Resend', 'SendGrid', 'Postmark', 'Nodemailer', 'AWS SES']
+  },
+  {
+    category: 'Hosting',
+    techs: ['Vercel', 'AWS', 'Netlify', 'Render', 'Docker']
+  }
+]
+
+export const getTechSections = (type: 'separate' | 'fullstack'): TechSection[] =>
+  type === 'fullstack' ? TECH_SECTIONS_FULLSTACK : TECH_SECTIONS_SEPARATE
+
 export const TECH_DETAILS: Record<string, { logo?: string; mockupIcon?: React.ComponentType<{ className?: string }> }> = {
-  'React': { logo: '/React-Logo.png' },
   'Next.js': { logo: '/nextjs7685.logowik.com.png' },
+  'Remix': { mockupIcon: Layers },
+  'Nuxt.js': { mockupIcon: Zap },
+  'SvelteKit': { mockupIcon: Code2 },
+  'Astro': { mockupIcon: Globe },
+  'Laravel': { mockupIcon: Cpu },
+  'React': { logo: '/React-Logo.png' },
+  'Vue.js': { mockupIcon: Layers },
+  'Svelte': { mockupIcon: Code2 },
   'Tailwind CSS': { mockupIcon: Layers },
   'TypeScript': { mockupIcon: Code2 },
   'Vite': { mockupIcon: Zap },
   'Node.js': { logo: '/nodejs-icon.png' },
   'Express': { logo: '/express-js2119.logowik.com.png' },
   'Fastify': { mockupIcon: Cpu },
+  'NestJS': { mockupIcon: Terminal },
   'GraphQL': { mockupIcon: Network },
   'Python': { mockupIcon: Terminal },
   'Clerk': { mockupIcon: ShieldCheck },
@@ -144,8 +192,23 @@ export const PRE_RESIZE_SCALE = 0.5
 // Step 1 Centering & Fade Speed:
 export const CENTERING_SPEED_MS = 600
 
-export const STEP_CATEGORIES = ['Frontend', 'Backend', 'Auth', 'Database', 'Email Service', 'Hosting']
-export const STEP_NODE_KEYS = ['top-left', 'top-right', 'left', 'right', 'bottom-left', 'bottom-right']
+export const STEP_CATEGORIES_SEPARATE = ['Frontend', 'Backend', 'Auth', 'Database', 'Email Service', 'Hosting']
+export const STEP_NODE_KEYS_SEPARATE = ['top-left', 'top-right', 'left', 'right', 'bottom-left', 'bottom-right']
+
+export const STEP_CATEGORIES_FULLSTACK = ['Fullstack Framework', 'Auth', 'Database', 'Email Service', 'Hosting']
+export const STEP_NODE_KEYS_FULLSTACK = ['top-left', 'left', 'right', 'bottom-left', 'bottom-right']
+
+export const getStepCategories = (type: 'separate' | 'fullstack') =>
+  type === 'fullstack' ? STEP_CATEGORIES_FULLSTACK : STEP_CATEGORIES_SEPARATE
+
+export const getStepNodeKeys = (type: 'separate' | 'fullstack') =>
+  type === 'fullstack' ? STEP_NODE_KEYS_FULLSTACK : STEP_NODE_KEYS_SEPARATE
+
+// Default exports for backward compatibility
+export const SURROUNDING_NODES = SURROUNDING_NODES_SEPARATE
+export const TECH_SECTIONS = TECH_SECTIONS_SEPARATE
+export const STEP_CATEGORIES = STEP_CATEGORIES_SEPARATE
+export const STEP_NODE_KEYS = STEP_NODE_KEYS_SEPARATE
 
 export const LOADING_MESSAGES = [
   'Synthesizing architecture & dependencies...',

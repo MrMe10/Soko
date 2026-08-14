@@ -24,16 +24,8 @@ export default function App() {
     }
   ])
 
-  const handleCreateProject = (newProj: { name: string; description: string; type: 'separate' | 'fullstack' }) => {
-    const projectToAdd: Project = {
-      id: `proj-${Date.now()}`,
-      name: newProj.name,
-      description: newProj.description,
-      type: newProj.type,
-      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      status: 'synced'
-    }
-    setProjects(prev => [...prev, projectToAdd])
+  const handleCreateProject = (_newProj: { name: string; description: string; type: 'separate' | 'fullstack' }) => {
+    // Ephemeral mode: Do not save or append new project to the list for now
     setActiveTab('projects')
   }
 

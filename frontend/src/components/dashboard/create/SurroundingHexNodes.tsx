@@ -7,7 +7,7 @@
 
 import React from 'react'
 import {
-  SURROUNDING_NODES,
+  getSurroundingNodes,
   TECH_DETAILS,
   PRE_RESIZE_SCALE
 } from './createProjectData'
@@ -17,6 +17,7 @@ interface SurroundingHexNodesProps {
   isExpanded: boolean
   isPushedOut: boolean
   isStackShrunk: boolean
+  selectedType: 'separate' | 'fullstack'
   assignedTechs: Record<string, string>
   hoveredCellId: string | null
   draggedTech: { name: string; category: string } | null
@@ -28,6 +29,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
   isExpanded,
   isPushedOut,
   isStackShrunk,
+  selectedType,
   assignedTechs,
   hoveredCellId,
   draggedTech,
@@ -35,7 +37,9 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
 }) => {
   if (!isSelected) return null
 
-  const sortedNodes = [...SURROUNDING_NODES].sort((a, b) => {
+  const nodesList = getSurroundingNodes(selectedType)
+
+  const sortedNodes = [...nodesList].sort((a, b) => {
     const aAssigned = Boolean(assignedTechs[a.id])
     const bAssigned = Boolean(assignedTechs[b.id])
     const aHovered = hoveredCellId === a.id
@@ -44,7 +48,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
     const getWeight = (id: string, assigned: boolean, hovered: boolean) => {
       if (hovered) return 3
       if (assigned) return 2
-      const cat = SURROUNDING_NODES.find((n) => n.id === id)?.category
+      const cat = nodesList.find((n) => n.id === id)?.category
       const isComp = draggedTech ? cat === draggedTech.category : false
       if (isComp) return 1
       return 0
@@ -57,7 +61,13 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
     <>
       {sortedNodes.map(({ id, label, category: nodeCategory, Icon: NodeIcon, dx, dy }) => {
         const assignedTech = assignedTechs[id]
-        const isHoveredTarget = hoveredCellId === id
+        const isFullstackPairHover =
+          selectedType === 'fullstack' &&
+          draggedTech?.category === 'Fullstack Framework' &&
+          (id === 'top-left' || id === 'top-right') &&
+          (hoveredCellId === 'top-left' || hoveredCellId === 'top-right')
+
+        const isHoveredTarget = hoveredCellId === id || isFullstackPairHover
         const isDraggingActive = Boolean(draggedTech)
 
         const isCompatible = draggedTech ? nodeCategory === draggedTech.category : false
@@ -105,7 +115,7 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                   ? '#fef2f2'
                   : isTargetGlowing
                   ? '#f5f7ff'
-                  : '#f1f5f9'
+                  : '#ffffff'
               }
               stroke={
                 isStackShrunk
@@ -118,33 +128,33 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                   ? '#ef4444'
                   : isTargetGlowing
                   ? '#818cf8'
-                  : 'none'
+                  : '#cbd5e1'
               }
-              strokeWidth={isStackShrunk ? '10' : assignedTech ? '3.5' : isHoveredTarget ? '3' : isTargetGlowing ? '2.5' : '0'}
+              strokeWidth={
+                isStackShrunk
+                  ? '10'
+                  : assignedTech
+                  ? '3.5'
+                  : isHoveredTarget
+                  ? '3'
+                  : isTargetGlowing
+                  ? '2.5'
+                  : '1.8'
+              }
               strokeDasharray={
                 isStackShrunk
                   ? undefined
-                  : isHoveredValid && !assignedTech
+                  : assignedTech
+                  ? undefined
+                  : isHoveredValid
                   ? '6 4'
                   : isHoveredInvalid
                   ? '4 4'
                   : isTargetGlowing
                   ? '4 3'
-                  : undefined
+                  : '5 4'
               }
-              className={
-                isStackShrunk
-                  ? 'drop-shadow-[0_0_8px_rgba(99,102,241,0.6)] transition-all duration-300'
-                  : assignedTech
-                  ? 'drop-shadow-[0_0_18px_rgba(99,102,241,0.35)]'
-                  : isHoveredValid
-                  ? 'drop-shadow-md'
-                  : isHoveredInvalid
-                  ? 'drop-shadow-sm'
-                  : isTargetGlowing
-                  ? 'drop-shadow-[0_0_14px_rgba(99,102,241,0.45)]'
-                  : 'drop-shadow-sm'
-              }
+              className={isStackShrunk ? 'transition-all duration-300' : 'transition-colors'}
             />
             <foreignObject x="30" y="55" width="180" height="160">
               <div

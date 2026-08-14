@@ -10,13 +10,13 @@
 import React, { useState, useEffect } from 'react'
 import {
   OPTIONS,
-  SURROUNDING_NODES,
+  getSurroundingNodes,
+  getStepCategories,
   INITIAL_HEXAGON_SCALE,
   ENLARGED_HEXAGON_SCALE,
   FINAL_HEXAGON_SCALE,
   CENTERING_SPEED_MS,
-  LOADING_MESSAGES,
-  STEP_CATEGORIES
+  LOADING_MESSAGES
 } from './createProjectData'
 import { SetupSelectionHeader, SetupSelectionFooter } from './SetupSelectionHeader'
 import { ProjectDetailsForm } from './ProjectDetailsForm'
@@ -130,17 +130,27 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
 
       let isMatch = false
       if (cellId && draggedTech) {
-        const targetNode = SURROUNDING_NODES.find((n) => n.id === cellId)
+        const targetNodes = getSurroundingNodes(selectedType)
+        const targetNode = targetNodes.find((n) => n.id === cellId)
         isMatch = Boolean(targetNode && targetNode.category === draggedTech.category)
 
         if (isMatch) {
-          setAssignedTechs((prev) => ({
-            ...prev,
-            [cellId]: draggedTech.name
-          }))
+          if (selectedType === 'fullstack' && (cellId === 'top-left' || cellId === 'top-right') && draggedTech.category === 'Fullstack Framework') {
+            setAssignedTechs((prev) => ({
+              ...prev,
+              'top-left': draggedTech.name,
+              'top-right': draggedTech.name
+            }))
+          } else {
+            setAssignedTechs((prev) => ({
+              ...prev,
+              [cellId]: draggedTech.name
+            }))
+          }
 
           // Automatically transition to next category step after selecting a tech pill
-          if (activeStepIndex < STEP_CATEGORIES.length - 1) {
+          const stepCats = getStepCategories(selectedType)
+          if (activeStepIndex < stepCats.length - 1) {
             setTimeout(() => {
               handleStepChange(activeStepIndex + 1)
             }, 350)
@@ -194,11 +204,14 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerUp)
     }
-  }, [draggedTech, assignedTechs, dragPos, dragOriginPos, activeStepIndex])
+  }, [draggedTech, assignedTechs, dragPos, dragOriginPos, activeStepIndex, selectedType])
 
   const handleSelectType = (type: 'separate' | 'fullstack') => {
     setSelectedType(type)
     setProjectName(type === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse')
+    setAssignedTechs({})
+    setActiveStepIndex(0)
+    setMaxStepReached(0)
   }
 
   const handleContinue = () => {
@@ -373,13 +386,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                 }}
               >
                 <svg
-                  className={`absolute inset-0 w-full h-full overflow-visible transition-all duration-500 ease-in-out ${
-                    isSelected
-                      ? isScaled && !isSubmitted
-                        ? 'drop-shadow-[0_0_40px_rgba(99,102,241,0.65)]'
-                        : 'drop-shadow-[0_0_24px_rgba(99,102,241,0.45)]'
-                      : 'drop-shadow-md group-hover:drop-shadow-lg'
-                  }`}
+                  className="absolute inset-0 w-full h-full overflow-visible transition-all duration-500 ease-in-out"
                   style={{ overflow: 'visible' }}
                   viewBox="0 0 240 270"
                   fill="none"
@@ -390,13 +397,19 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                     isExpanded={isExpanded}
                     isPushedOut={isPushedOut}
                     isStackShrunk={isStackShrunk}
+                    selectedType={selectedType}
                     assignedTechs={assignedTechs}
                     hoveredCellId={hoveredCellId}
                     draggedTech={draggedTech}
                     onUnassignTech={(nodeId) => {
                       setAssignedTechs((prev) => {
                         const next = { ...prev }
-                        delete next[nodeId]
+                        if (selectedType === 'fullstack' && (nodeId === 'top-left' || nodeId === 'top-right')) {
+                          delete next['top-left']
+                          delete next['top-right']
+                        } else {
+                          delete next[nodeId]
+                        }
                         return next
                       })
                     }}
@@ -408,11 +421,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                     fill="#ffffff"
                     stroke={isStackShrunk ? '#6366f1' : isSelected ? '#6366f1' : '#e2e8f0'}
                     strokeWidth={isStackShrunk ? '12' : isSelected ? (isScaled && !isSubmitted ? '5' : '4') : '2'}
-                    className={`transition-all duration-300 ${
-                      isStackShrunk
-                        ? 'drop-shadow-[0_0_10px_rgba(99,102,241,0.7)]'
-                        : 'group-hover:stroke-indigo-400'
-                    }`}
+                    className="transition-all duration-300 group-hover:stroke-indigo-400"
                   />
                 </svg>
 
@@ -453,6 +462,10 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
         isBuildComplete={isBuildComplete}
         onResetAnimation={handleResetAnimation}
         onCompleteProject={handleCompleteProject}
+        projectName={projectName}
+        projectDescription={projectDescription}
+        selectedType={selectedType}
+        assignedTechs={assignedTechs}
       />
 
       {/* Drag previews & physics animation overlays */}
@@ -462,6 +475,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
         hoveredCellId={hoveredCellId}
         returningTech={returningTech}
         isReturningAnim={isReturningAnim}
+        selectedType={selectedType}
       />
     </div>
   )

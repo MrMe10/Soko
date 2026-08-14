@@ -8,9 +8,9 @@
 import React from 'react'
 import { Layers, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
 import {
-  STEP_CATEGORIES,
-  STEP_NODE_KEYS,
-  TECH_SECTIONS,
+  getStepCategories,
+  getStepNodeKeys,
+  getTechSections,
   TECH_DETAILS
 } from './createProjectData'
 
@@ -44,15 +44,19 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
   returningTech,
   projectName: _projectName,
   projectDescription: _projectDescription,
-  selectedType: _selectedType,
+  selectedType,
   onStepChange,
   onStartDrag,
   onGenerate
 }) => {
-  const currentCategory = STEP_CATEGORIES[activeStepIndex] || 'Frontend'
-  const currentStepNodeKey = STEP_NODE_KEYS[activeStepIndex]
+  const stepCategories = getStepCategories(selectedType)
+  const stepNodeKeys = getStepNodeKeys(selectedType)
+  const techSections = getTechSections(selectedType)
+
+  const currentCategory = stepCategories[activeStepIndex] || stepCategories[0]
+  const currentStepNodeKey = stepNodeKeys[activeStepIndex]
   const isCurrentStepFilled = currentStepNodeKey ? Boolean(assignedTechs[currentStepNodeKey]) : false
-  const activeTechSection = TECH_SECTIONS.find((s) => s.category === currentCategory) || TECH_SECTIONS[0]
+  const activeTechSection = techSections.find((s) => s.category === currentCategory) || techSections[0]
 
   return (
     <div
@@ -72,16 +76,16 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
               Technology Stack
             </span>
             <span className="text-[10.5px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-mono border border-indigo-100/80">
-              Step {activeStepIndex + 1} of {STEP_CATEGORIES.length}
+              Step {activeStepIndex + 1} of {stepCategories.length}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none py-0.5 -mx-1 px-1">
-            {STEP_CATEGORIES.map((cat, idx) => {
+            {stepCategories.map((cat, idx) => {
               const isCurrent = activeStepIndex === idx
-              const nodeKey = STEP_NODE_KEYS[idx]
+              const nodeKey = stepNodeKeys[idx]
               const isFilled = Boolean(assignedTechs[nodeKey])
-              const displayLabel = cat === 'Email Service' ? 'Email' : cat
+              const displayLabel = cat === 'Email Service' ? 'Email' : cat === 'Fullstack Framework' ? 'Fullstack' : cat
 
               return (
                 <button
@@ -217,14 +221,14 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
             )}
 
             {isCurrentStepFilled && (
-              activeStepIndex < STEP_CATEGORIES.length - 1 ? (
+              activeStepIndex < stepCategories.length - 1 ? (
                 activeStepIndex < maxStepReached ? (
                   <button
                     type="button"
                     onClick={() => onStepChange(activeStepIndex + 1)}
                     className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>Next: {STEP_CATEGORIES[activeStepIndex + 1]}</span>
+                    <span>Next: {stepCategories[activeStepIndex + 1] === 'Fullstack Framework' ? 'Fullstack' : stepCategories[activeStepIndex + 1]}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : null

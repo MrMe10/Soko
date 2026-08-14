@@ -7,7 +7,7 @@
 
 import React from 'react'
 import { Layers } from 'lucide-react'
-import { SURROUNDING_NODES, TECH_DETAILS } from './createProjectData'
+import { getSurroundingNodes, TECH_DETAILS } from './createProjectData'
 
 interface TechDragPreviewsProps {
   draggedTech: { name: string; category: string } | null
@@ -22,6 +22,7 @@ interface TechDragPreviewsProps {
     toY: number
   } | null
   isReturningAnim: boolean
+  selectedType: 'separate' | 'fullstack'
 }
 
 export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
@@ -29,13 +30,15 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
   dragPos,
   hoveredCellId,
   returningTech,
-  isReturningAnim
+  isReturningAnim,
+  selectedType
 }) => {
   return (
     <>
       {/* Floating Dragged Hexagon Preview */}
       {draggedTech && dragPos && (() => {
-        const hoveredNode = hoveredCellId ? SURROUNDING_NODES.find((n) => n.id === hoveredCellId) : null
+        const nodesList = getSurroundingNodes(selectedType)
+        const hoveredNode = hoveredCellId ? nodesList.find((n) => n.id === hoveredCellId) : null
         const isHoveredInvalid = Boolean(hoveredNode && hoveredNode.category !== draggedTech.category)
         const details = TECH_DETAILS[draggedTech.name] || {}
         const LogoImg = details.logo

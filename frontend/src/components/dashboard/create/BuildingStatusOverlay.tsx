@@ -2,12 +2,13 @@
  * BuildingStatusOverlay.tsx
  * -------------------------
  * Stage 4 component: Renders environment synthesis status messages, progress indicator, launch project button,
- * and the reset/replay animation controller.
+ * AI setup roadmap generator modal launcher, and reset animation controller.
  */
 
-import React from 'react'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react'
 import { LOADING_MESSAGES } from './createProjectData'
+import AIRoadmapModal from './AIRoadmapModal'
 
 interface BuildingStatusOverlayProps {
   isStackShrunk: boolean
@@ -16,6 +17,10 @@ interface BuildingStatusOverlayProps {
   isBuildComplete: boolean
   onResetAnimation: () => void
   onCompleteProject: () => void
+  projectName?: string
+  projectDescription?: string
+  selectedType?: 'separate' | 'fullstack'
+  assignedTechs?: Record<string, string>
 }
 
 export const BuildingStatusOverlay: React.FC<BuildingStatusOverlayProps> = ({
@@ -24,8 +29,14 @@ export const BuildingStatusOverlay: React.FC<BuildingStatusOverlayProps> = ({
   loadingMessageIndex,
   isBuildComplete,
   onResetAnimation,
-  onCompleteProject
+  onCompleteProject,
+  projectName = 'Decoupled Storehouse',
+  projectDescription = '',
+  selectedType = 'separate',
+  assignedTechs = {}
 }) => {
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false)
+
   return (
     <>
       {/* Small Dynamic Loading Status Text Right Below Micro-Icon (Unscaled 100%) */}
@@ -37,14 +48,28 @@ export const BuildingStatusOverlay: React.FC<BuildingStatusOverlayProps> = ({
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 animate-bounce" />
                 <span>Environment Ready & Synthesized!</span>
               </div>
-              <button
-                type="button"
-                onClick={onCompleteProject}
-                className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer animate-pulse"
-              >
-                <span>Launch Project Workspace</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+
+              <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+                {/* Finish & Return Button */}
+                <button
+                  type="button"
+                  onClick={onCompleteProject}
+                  className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Finish & Return</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                {/* Generate AI Roadmap Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowRoadmapModal(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-indigo-200" />
+                  <span>Generate AI Roadmap</span>
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -77,6 +102,16 @@ export const BuildingStatusOverlay: React.FC<BuildingStatusOverlayProps> = ({
           </button>
         </div>
       )}
+
+      {/* Interactive AI Roadmap Response Modal */}
+      <AIRoadmapModal
+        isOpen={showRoadmapModal}
+        onClose={() => setShowRoadmapModal(false)}
+        projectName={projectName}
+        projectDescription={projectDescription}
+        selectedType={selectedType}
+        assignedTechs={assignedTechs}
+      />
     </>
   )
 }
