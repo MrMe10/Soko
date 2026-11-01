@@ -6,13 +6,15 @@
  */
 
 import React from 'react'
-import { Layers, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
 import {
   getStepCategories,
   getStepNodeKeys,
   getTechSections,
-  TECH_DETAILS
+  getTechDetails,
+  PREVIEW_HEX_POINTS
 } from './createProjectData'
+import type { ArchitectureType } from './createProjectData'
 
 interface TechStackDrawerProps {
   isStackGenerated: boolean
@@ -24,9 +26,7 @@ interface TechStackDrawerProps {
   assignedTechs: Record<string, string>
   draggedTech: { name: string; category: string } | null
   returningTech: { name: string; category: string } | null
-  projectName: string
-  projectDescription: string
-  selectedType: 'separate' | 'fullstack'
+  selectedType: ArchitectureType
   onStepChange: (index: number) => void
   onStartDrag: (e: React.PointerEvent, name: string, category: string) => void
   onGenerate: () => void
@@ -42,8 +42,6 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
   assignedTechs,
   draggedTech,
   returningTech,
-  projectName: _projectName,
-  projectDescription: _projectDescription,
   selectedType,
   onStepChange,
   onStartDrag,
@@ -60,7 +58,7 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
 
   return (
     <div
-      className={`absolute left-4 md:left-10 lg:left-14 top-6 bottom-6 md:top-8 md:bottom-8 w-[360px] sm:w-[440px] bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-2xl shadow-slate-900/10 transition-all duration-700 ease-out z-30 flex flex-col justify-between ${
+      className={`absolute left-4 md:left-10 lg:left-14 top-6 bottom-6 md:top-8 md:bottom-8 w-[360px] sm:w-[440px] bg-zinc-900/95 rounded-2xl border border-zinc-800 p-5 sm:p-6 shadow-2xl shadow-black/90 transition-all duration-700 ease-out z-30 flex flex-col justify-between ${
         isStackGenerated
           ? '-translate-x-32 opacity-0 pointer-events-none'
           : isPushedOut
@@ -70,12 +68,12 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
     >
       {/* Technology Stack Sections */}
       <div className="space-y-5 flex-1 flex flex-col min-h-0">
-        <div className="pb-3 border-b border-slate-100 shrink-0 space-y-2.5">
+        <div className="pb-3 border-b border-zinc-800 shrink-0 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono whitespace-nowrap">
+            <span className="text-[11px] font-black uppercase tracking-wider text-zinc-400 font-mono whitespace-nowrap">
               Technology Stack
             </span>
-            <span className="text-[10.5px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full font-mono border border-indigo-100/80">
+            <span className="text-[10.5px] font-extrabold text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full font-mono border border-emerald-800/80">
               Step {activeStepIndex + 1} of {stepCategories.length}
             </span>
           </div>
@@ -94,10 +92,10 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
                   onClick={() => (isFilled || idx <= activeStepIndex || idx <= maxStepReached) && onStepChange(idx)}
                   className={`px-2.5 py-1 text-[10.5px] font-extrabold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     isCurrent
-                      ? 'bg-indigo-600 text-white shadow-xs'
+                      ? 'bg-emerald-500 text-black shadow-xs font-black'
                       : isFilled
-                      ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                      : 'bg-slate-100 text-slate-400 opacity-60'
+                      ? 'bg-emerald-950/70 text-emerald-400 hover:bg-emerald-900/60 border border-emerald-800/60'
+                      : 'bg-zinc-800/60 text-zinc-500'
                   }`}
                 >
                   {displayLabel}
@@ -113,22 +111,16 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
             className={`space-y-2 ${
               stepFadeStage === 'exiting'
                 ? slideDirection === 'next'
-                  ? '-translate-x-14 opacity-0 transition-all duration-180 ease-in pointer-events-none'
-                  : 'translate-x-14 opacity-0 transition-all duration-180 ease-in pointer-events-none'
-                : stepFadeStage === 'entering'
-                ? slideDirection === 'next'
-                  ? 'translate-x-14 opacity-0 transition-none pointer-events-none'
-                  : '-translate-x-14 opacity-0 transition-none pointer-events-none'
                 : 'translate-x-0 opacity-100 transition-all duration-250 ease-out'
             }`}
           >
-            <div className="text-sm sm:text-base font-extrabold text-slate-800 flex items-center justify-between">
+            <div className="text-sm sm:text-base font-extrabold text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>{activeTechSection.category} Technologies</span>
               </div>
               {isCurrentStepFilled && (
-                <span className="text-[10.5px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
+                <span className="text-[10.5px] font-extrabold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-800/80">
                   Selected: {assignedTechs[currentStepNodeKey]}
                 </span>
               )}
@@ -140,9 +132,9 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
                 const isBeingDragged = draggedTech?.name === tech
                 const isReturning = returningTech?.name === tech
                 const isUnavailable = isAssigned || isBeingDragged || isReturning
-                const details = TECH_DETAILS[tech] || {}
+                const details = getTechDetails(tech)
                 const LogoImg = details.logo
-                const MockupIcon = details.mockupIcon || Layers
+                const MockupIcon = details.mockupIcon
 
                 return (
                   <div
@@ -157,12 +149,12 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
                   >
                     <svg viewBox="0 0 120 135" className="absolute inset-0 w-full h-full overflow-visible">
                       <polygon
-                        points="60,2.5 115,34 115,96 60,127.5 5,96 5,34"
-                        fill={isUnavailable ? '#f1f5f9' : '#ffffff'}
-                        stroke={isUnavailable ? '#cbd5e1' : '#cbd5e1'}
+                        points={PREVIEW_HEX_POINTS}
+                        fill={isUnavailable ? '#18181b' : '#0f1311'}
+                        stroke={isUnavailable ? '#27272a' : '#27272a'}
                         strokeWidth={isUnavailable ? '1.5' : '1.8'}
                         strokeDasharray={isUnavailable ? '4 3' : undefined}
-                        className={isUnavailable ? '' : 'group-hover:stroke-indigo-500 group-hover:drop-shadow-md transition-colors'}
+                        className={isUnavailable ? '' : 'group-hover:stroke-emerald-400 group-hover:drop-shadow-md transition-colors'}
                       />
                     </svg>
 
@@ -177,22 +169,22 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                             isUnavailable
-                              ? 'bg-slate-100 border border-slate-200 text-slate-400'
-                              : 'bg-indigo-50 border border-indigo-100/80 text-indigo-600'
+                              ? 'bg-zinc-900 border border-zinc-800 text-zinc-600'
+                              : 'bg-zinc-800 border border-zinc-700 text-emerald-400'
                           }`}
                         >
-                          <MockupIcon className="w-5 h-5" />
+                          {MockupIcon && <MockupIcon className="w-5 h-5" />}
                         </div>
                       )}
                       <span
                         className={`text-[10px] sm:text-[10.5px] leading-tight max-w-[74px] sm:max-w-[80px] text-center line-clamp-2 break-words ${
-                          isUnavailable ? 'font-bold text-slate-400' : 'font-extrabold text-slate-900'
+                          isUnavailable ? 'font-bold text-zinc-600' : 'font-extrabold text-zinc-100'
                         }`}
                       >
                         {tech}
                       </span>
                       {isUnavailable && (
-                        <span className="text-[8.5px] font-extrabold uppercase font-mono text-slate-400 tracking-wider">
+                        <span className="text-[8.5px] font-extrabold uppercase font-mono text-zinc-500 tracking-wider">
                           {isAssigned ? 'Picked' : 'Dragging'}
                         </span>
                       )}
@@ -206,12 +198,12 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
 
         {/* Step Navigation Bar (Previous & Next/Generate Buttons) */}
         {(activeStepIndex > 0 || isCurrentStepFilled) && (
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5 animate-fade-in">
+          <div className="pt-3 border-t border-zinc-800 flex items-center justify-between gap-2.5 animate-fade-in">
             {activeStepIndex > 0 ? (
               <button
                 type="button"
                 onClick={() => onStepChange(activeStepIndex - 1)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Previous</span>
@@ -226,23 +218,23 @@ export const TechStackDrawer: React.FC<TechStackDrawerProps> = ({
                   <button
                     type="button"
                     onClick={() => onStepChange(activeStepIndex + 1)}
-                    className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2 px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black rounded-xl text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>Next: {stepCategories[activeStepIndex + 1] === 'Fullstack Framework' ? 'Fullstack' : stepCategories[activeStepIndex + 1]}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 text-black" />
                   </button>
                 ) : null
               ) : (
                 <button
                   type="button"
                   onClick={onGenerate}
-                  className={`flex-1 py-2 px-4 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`flex-1 py-2 px-4 text-black rounded-xl text-xs sm:text-sm font-black shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     isStackGenerated
-                      ? 'bg-emerald-600 shadow-emerald-600/30'
-                      : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 shadow-indigo-600/35 hover:shadow-indigo-600/50 animate-pulse'
+                      ? 'bg-emerald-400 shadow-emerald-500/30'
+                      : 'bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 active:scale-95 shadow-emerald-500/30 hover:shadow-emerald-500/50 animate-pulse'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-black" />
                   <span>{isStackGenerated ? 'Stack Ready!' : 'Generate'}</span>
                 </button>
               )

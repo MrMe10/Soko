@@ -5,6 +5,7 @@
  * technology section lists, icon mappings, animation scale constants, and environment building status messages.
  */
 
+import React from 'react'
 import {
   Layers,
   Cpu,
@@ -23,19 +24,24 @@ import {
   Server,
   Globe
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+export type ArchitectureType = 'separate' | 'fullstack'
+
+export type NodeId = 'top-left' | 'top-right' | 'left' | 'right' | 'bottom-left' | 'bottom-right'
 
 export interface ProjectOption {
-  type: 'separate' | 'fullstack'
+  type: ArchitectureType
   title: string
   desc: string
   Icon: React.ComponentType<{ className?: string }>
 }
 
 export interface SurroundingNode {
-  id: string
+  id: NodeId
   label: string
   category: string
-  Icon: React.ComponentType<{ className?: string }>
+  Icon: LucideIcon
   dx: number
   dy: number
 }
@@ -44,6 +50,34 @@ export interface TechSection {
   category: string
   techs: string[]
 }
+
+export interface TechDetail {
+  logo?: string
+  mockupIcon?: LucideIcon
+}
+
+// -------------------------------------------------------------
+// Hexagon Geometry & Layout Constants
+// -------------------------------------------------------------
+export const HEX_POINTS = '120,5 230,68 230,195 120,258 10,195 10,68'
+export const PREVIEW_HEX_POINTS = '60,2.5 115,34 115,96 60,127.5 5,96 5,34'
+export const HEX_ORIGIN = '120px 131.5px'
+export const HEX_PUSH_FACTOR = 0.72
+
+// 1. Initial size during selection & gliding to center:
+export const INITIAL_HEXAGON_SCALE = 'scale-100'
+
+// 2. Enlarged size for entering Title & Description textboxes:
+export const ENLARGED_HEXAGON_SCALE = 'scale-[1.8] sm:scale-[1.85]'
+
+// 3. Third size with Title in the center:
+export const FINAL_HEXAGON_SCALE = 'scale-[0.82] sm:scale-[0.70]'
+
+// 4. Initial scale of surrounding nodes before resize:
+export const PRE_RESIZE_SCALE = 0.5
+
+// Step 1 Centering & Fade Speed:
+export const CENTERING_SPEED_MS = 600
 
 export const OPTIONS: ProjectOption[] = [
   {
@@ -60,28 +94,50 @@ export const OPTIONS: ProjectOption[] = [
   }
 ]
 
+// 4 Shared satellite nodes common to both architectures
+const SHARED_SATELLITE_NODES: SurroundingNode[] = [
+  { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
+  { id: 'bottom-right', label: 'Hosting', category: 'Hosting', Icon: Server, dx: 110, dy: 190 },
+  { id: 'bottom-left', label: 'Email Service', category: 'Email Service', Icon: Mail, dx: -110, dy: 190 },
+  { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
+]
+
 // 6 surrounding nodes for Decoupled / Separate architecture
 export const SURROUNDING_NODES_SEPARATE: SurroundingNode[] = [
   { id: 'top-left', label: 'Frontend', category: 'Frontend', Icon: Layers, dx: -110, dy: -190 },
   { id: 'top-right', label: 'Backend', category: 'Backend', Icon: Cpu, dx: 110, dy: -190 },
-  { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
-  { id: 'bottom-right', label: 'Hosting', category: 'Hosting', Icon: Server, dx: 110, dy: 190 },
-  { id: 'bottom-left', label: 'Email Service', category: 'Email Service', Icon: Mail, dx: -110, dy: 190 },
-  { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
+  ...SHARED_SATELLITE_NODES
 ]
 
-// 6 surrounding nodes for Fullstack architecture (Frontend & Backend both powered by Fullstack Framework)
+// 6 surrounding nodes for Fullstack architecture
 export const SURROUNDING_NODES_FULLSTACK: SurroundingNode[] = [
   { id: 'top-left', label: 'Frontend', category: 'Fullstack Framework', Icon: Layers, dx: -110, dy: -190 },
   { id: 'top-right', label: 'Backend', category: 'Fullstack Framework', Icon: Cpu, dx: 110, dy: -190 },
-  { id: 'right', label: 'Database', category: 'Database', Icon: Database, dx: 220, dy: 0 },
-  { id: 'bottom-right', label: 'Hosting', category: 'Hosting', Icon: Server, dx: 110, dy: 190 },
-  { id: 'bottom-left', label: 'Email Service', category: 'Email Service', Icon: Mail, dx: -110, dy: 190 },
-  { id: 'left', label: 'Auth', category: 'Auth', Icon: Shield, dx: -220, dy: 0 }
+  ...SHARED_SATELLITE_NODES
 ]
 
-export const getSurroundingNodes = (type: 'separate' | 'fullstack'): SurroundingNode[] =>
+export const getSurroundingNodes = (type: ArchitectureType): SurroundingNode[] =>
   type === 'fullstack' ? SURROUNDING_NODES_FULLSTACK : SURROUNDING_NODES_SEPARATE
+
+// 4 Shared technology sections common to both architectures
+const SHARED_TECH_SECTIONS: TechSection[] = [
+  {
+    category: 'Auth',
+    techs: ['Clerk', 'NextAuth', 'Supabase Auth', 'OAuth 2.0', 'JWT']
+  },
+  {
+    category: 'Database',
+    techs: ['PostgreSQL', 'MongoDB', 'Redis', 'Prisma', 'Pinecone']
+  },
+  {
+    category: 'Email Service',
+    techs: ['Resend', 'SendGrid', 'Postmark', 'Nodemailer', 'AWS SES']
+  },
+  {
+    category: 'Hosting',
+    techs: ['Vercel', 'AWS', 'Netlify', 'Render', 'Docker']
+  }
+]
 
 export const TECH_SECTIONS_SEPARATE: TechSection[] = [
   {
@@ -92,22 +148,7 @@ export const TECH_SECTIONS_SEPARATE: TechSection[] = [
     category: 'Backend',
     techs: ['Node.js', 'Express', 'Fastify', 'NestJS', 'GraphQL', 'Python']
   },
-  {
-    category: 'Auth',
-    techs: ['Clerk', 'NextAuth', 'Supabase Auth', 'OAuth 2.0', 'JWT']
-  },
-  {
-    category: 'Database',
-    techs: ['PostgreSQL', 'MongoDB', 'Redis', 'Prisma', 'Pinecone']
-  },
-  {
-    category: 'Email Service',
-    techs: ['Resend', 'SendGrid', 'Postmark', 'Nodemailer', 'AWS SES']
-  },
-  {
-    category: 'Hosting',
-    techs: ['Vercel', 'AWS', 'Netlify', 'Render', 'Docker']
-  }
+  ...SHARED_TECH_SECTIONS
 ]
 
 export const TECH_SECTIONS_FULLSTACK: TechSection[] = [
@@ -115,28 +156,13 @@ export const TECH_SECTIONS_FULLSTACK: TechSection[] = [
     category: 'Fullstack Framework',
     techs: ['Next.js', 'Remix', 'Nuxt.js', 'SvelteKit', 'Astro', 'Laravel']
   },
-  {
-    category: 'Auth',
-    techs: ['Clerk', 'NextAuth', 'Supabase Auth', 'OAuth 2.0', 'JWT']
-  },
-  {
-    category: 'Database',
-    techs: ['PostgreSQL', 'MongoDB', 'Redis', 'Prisma', 'Pinecone']
-  },
-  {
-    category: 'Email Service',
-    techs: ['Resend', 'SendGrid', 'Postmark', 'Nodemailer', 'AWS SES']
-  },
-  {
-    category: 'Hosting',
-    techs: ['Vercel', 'AWS', 'Netlify', 'Render', 'Docker']
-  }
+  ...SHARED_TECH_SECTIONS
 ]
 
-export const getTechSections = (type: 'separate' | 'fullstack'): TechSection[] =>
+export const getTechSections = (type: ArchitectureType): TechSection[] =>
   type === 'fullstack' ? TECH_SECTIONS_FULLSTACK : TECH_SECTIONS_SEPARATE
 
-export const TECH_DETAILS: Record<string, { logo?: string; mockupIcon?: React.ComponentType<{ className?: string }> }> = {
+export const TECH_DETAILS: Record<string, TechDetail> = {
   'Next.js': { logo: '/nextjs7685.logowik.com.png' },
   'Remix': { mockupIcon: Layers },
   'Nuxt.js': { mockupIcon: Zap },
@@ -177,38 +203,22 @@ export const TECH_DETAILS: Record<string, { logo?: string; mockupIcon?: React.Co
   'Docker': { mockupIcon: Server }
 }
 
-// 1. Initial size during selection & gliding to center:
-export const INITIAL_HEXAGON_SCALE = 'scale-100'
-
-// 2. Enlarged size for entering Title & Description textboxes:
-export const ENLARGED_HEXAGON_SCALE = 'scale-[1.8] sm:scale-[1.85]'
-
-// 3. Third size with Title in the center:
-export const FINAL_HEXAGON_SCALE = 'scale-[0.82] sm:scale-[0.70]'
-
-// 4. Initial scale of surrounding nodes before resize:
-export const PRE_RESIZE_SCALE = 0.5
-
-// Step 1 Centering & Fade Speed:
-export const CENTERING_SPEED_MS = 600
+export const getTechDetails = (techName?: string | null): TechDetail => {
+  if (!techName) return { mockupIcon: Layers }
+  return TECH_DETAILS[techName] || { mockupIcon: Layers }
+}
 
 export const STEP_CATEGORIES_SEPARATE = ['Frontend', 'Backend', 'Auth', 'Database', 'Email Service', 'Hosting']
-export const STEP_NODE_KEYS_SEPARATE = ['top-left', 'top-right', 'left', 'right', 'bottom-left', 'bottom-right']
+export const STEP_NODE_KEYS_SEPARATE: NodeId[] = ['top-left', 'top-right', 'left', 'right', 'bottom-left', 'bottom-right']
 
 export const STEP_CATEGORIES_FULLSTACK = ['Fullstack Framework', 'Auth', 'Database', 'Email Service', 'Hosting']
-export const STEP_NODE_KEYS_FULLSTACK = ['top-left', 'left', 'right', 'bottom-left', 'bottom-right']
+export const STEP_NODE_KEYS_FULLSTACK: NodeId[] = ['top-left', 'left', 'right', 'bottom-left', 'bottom-right']
 
-export const getStepCategories = (type: 'separate' | 'fullstack') =>
+export const getStepCategories = (type: ArchitectureType): string[] =>
   type === 'fullstack' ? STEP_CATEGORIES_FULLSTACK : STEP_CATEGORIES_SEPARATE
 
-export const getStepNodeKeys = (type: 'separate' | 'fullstack') =>
+export const getStepNodeKeys = (type: ArchitectureType): NodeId[] =>
   type === 'fullstack' ? STEP_NODE_KEYS_FULLSTACK : STEP_NODE_KEYS_SEPARATE
-
-// Default exports for backward compatibility
-export const SURROUNDING_NODES = SURROUNDING_NODES_SEPARATE
-export const TECH_SECTIONS = TECH_SECTIONS_SEPARATE
-export const STEP_CATEGORIES = STEP_CATEGORIES_SEPARATE
-export const STEP_NODE_KEYS = STEP_NODE_KEYS_SEPARATE
 
 export const LOADING_MESSAGES = [
   'Synthesizing architecture & dependencies...',
@@ -218,3 +228,4 @@ export const LOADING_MESSAGES = [
   'Optimizing API routes & serverless handlers...',
   'Finalizing development environment...'
 ]
+

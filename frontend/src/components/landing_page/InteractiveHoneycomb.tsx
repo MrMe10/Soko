@@ -1,11 +1,37 @@
 import React, { useState, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 
-// ==========================================
-// ADJUST HONEYCOMB CELL SIZE HERE:
-// ==========================================
-const HEX_WIDTH = 105   // Width of a single hexagon
-const HEX_HEIGHT = 120  // Height of a single hexagon
-// ==========================================
+// ============================================================================
+// 🎨 HONEYCOMB FADE CONFIGURATION (Adjust fade-out effect here)
+// ============================================================================
+export const FADE_START_PERCENT = 75       // % from top where fade begins (e.g. 75 = 75% of screen is covered before fading)
+export const FADE_END_PERCENT = 100        // % from top where pattern reaches 0% opacity (bottom of screen)
+export const BOTTOM_OVERLAY_HEIGHT = 80    // Height in px of smooth bottom gradient blend (0 to disable)
+export const BOTTOM_OVERLAY_OPACITY = 0.6  // Darkness of bottom blend (0.0 to 1.0)
+export const TOP_OVERLAY_HEIGHT = 50       // Height in px of top edge blend (0 to disable)
+export const SIDE_FADE_PERCENT = 0         // % width on left & right edges (0 = edge to edge)
+// ============================================================================
+
+// ============================================================================
+// 📐 HONEYCOMB CELL SIZE CONFIGURATION
+// ============================================================================
+export const HEX_WIDTH = 105   // Width of a single hexagon
+export const HEX_HEIGHT = 120  // Height of a single hexagon
+// ============================================================================
+
+export interface InteractiveHoneycombProps {
+  /** % from top where vertical fade begins (0-100). Default: FADE_START_PERCENT (75) */
+  fadeStart?: number
+  /** % from top where pattern fades out completely (0-100). Default: FADE_END_PERCENT (100) */
+  fadeEnd?: number
+  /** Height in px of bottom gradient blend overlay (0 to disable). Default: BOTTOM_OVERLAY_HEIGHT (80) */
+  bottomOverlayHeight?: number
+  /** Darkness of bottom gradient blend (0.0 to 1.0). Default: BOTTOM_OVERLAY_OPACITY (0.6) */
+  bottomOverlayOpacity?: number
+  /** Height in px of top edge blend (0 to disable). Default: TOP_OVERLAY_HEIGHT (50) */
+  topOverlayHeight?: number
+  /** % width on left & right edges (0 = edge to edge). Default: SIDE_FADE_PERCENT (0) */
+  sideFade?: number
+}
 
 // Derived layout constants
 const colWidth = HEX_WIDTH / 2
@@ -48,15 +74,16 @@ const techLogos: TechLogo[] = [
   { src: '/t_pinecone-database4602.logowik.com.png', alt: 'Pinecone' }
 ]
 
+// 1-ring neighbor logic (1 center + 6 immediate neighbors)
 const isNeighbor = (col: number, row: number, hoveredCol: number, hoveredRow: number) => {
   if (col === hoveredCol && row === hoveredRow) return true
-  
+
   const colDiff = col - hoveredCol
   const rowDiff = row - hoveredRow
-  
+
   // Directly left/right
   if (rowDiff === 0 && Math.abs(colDiff) === 2) return true
-  
+
   // Diagonals
   const isEven = Math.abs(hoveredCol) % 2 === 0
   if (Math.abs(colDiff) === 1) {
@@ -66,11 +93,18 @@ const isNeighbor = (col: number, row: number, hoveredCol: number, hoveredRow: nu
       return rowDiff === 0 || rowDiff === 1
     }
   }
-  
+
   return false
 }
 
-export const InteractiveHoneycomb: React.FC = () => {
+export const InteractiveHoneycomb: React.FC<InteractiveHoneycombProps> = ({
+  fadeStart = FADE_START_PERCENT,
+  fadeEnd = FADE_END_PERCENT,
+  bottomOverlayHeight = BOTTOM_OVERLAY_HEIGHT,
+  bottomOverlayOpacity = BOTTOM_OVERLAY_OPACITY,
+  topOverlayHeight = TOP_OVERLAY_HEIGHT,
+  sideFade = SIDE_FADE_PERCENT,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
@@ -95,13 +129,14 @@ export const InteractiveHoneycomb: React.FC = () => {
     return () => resizeObserver.disconnect()
   }, [])
 
-  const cols = dimensions.width ? Math.ceil(dimensions.width / colWidth) + 2 : 0
-  const rows = dimensions.height ? Math.ceil(dimensions.height / rowHeight) + 1 : 0
+  // Generate extra rows and columns to cover the entire screen edge-to-edge
+  const cols = dimensions.width ? Math.ceil(dimensions.width / colWidth) + 3 : 0
+  const rows = dimensions.height ? Math.ceil(dimensions.height / rowHeight) + 2 : 0
 
   const hexagons = useMemo(() => {
     const arr: Cell[] = []
     if (cols > 0 && rows > 0) {
-      for (let col = -1; col < cols; col++) {
+      for (let col = -2; col < cols; col++) {
         for (let row = -1; row < rows; row++) {
           const x = col * colWidth
           const y = row * rowHeight + (Math.abs(col) % 2 === 1 ? oddRowOffset : 0)
@@ -115,7 +150,7 @@ export const InteractiveHoneycomb: React.FC = () => {
             y,
             centerX: x + halfWidth,
             centerY: y + halfHeight,
-            points,
+            points
           })
         }
       }
@@ -123,10 +158,11 @@ export const InteractiveHoneycomb: React.FC = () => {
     return arr
   }, [cols, rows])
 
-  // Continuous pointer movement tracking ensures fast cursor swipes never miss cells
   const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current || hexagons.length === 0) return
-    const rect = svgRef.current.getBoundingClientRect()
+    const svg = svgRef.current
+    if (!svg) return
+
+    const rect = svg.getBoundingClientRect()
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
 
@@ -151,95 +187,146 @@ export const InteractiveHoneycomb: React.FC = () => {
     }
   }, [hexagons])
 
+  // Partition hexagons into inactive background and active glowing cluster
+  // This ensures active glowing hexagons always render ON TOP of inactive ones in SVG DOM order,
+  // preventing dark grid strokes from overlapping or clipping green glowing strokes.
+  const { inactiveHexes, activeHexes } = useMemo(() => {
+    const inactive: Array<{ cell: Cell; logo: TechLogo | undefined }> = []
+    const active: Array<{ cell: Cell; logo: TechLogo | undefined }> = []
+
+    for (let i = 0; i < hexagons.length; i++) {
+      const cell = hexagons[i]
+      const isActive = hoveredCell
+        ? isNeighbor(cell.col, cell.row, hoveredCell.col, hoveredCell.row)
+        : false
+      const logoIndex = Math.abs(cell.col * 3 + cell.row * 7) % techLogos.length
+      const logo = techLogos[logoIndex]
+
+      if (isActive) {
+        active.push({ cell, logo })
+      } else {
+        inactive.push({ cell, logo })
+      }
+    }
+
+    return { inactiveHexes: inactive, activeHexes: active }
+  }, [hexagons, hoveredCell])
+
+  // Build dynamic masks based on fade configuration variables
+  const safeFadeStart = Math.min(100, Math.max(0, fadeStart))
+  const safeFadeEnd = Math.min(100, Math.max(safeFadeStart, fadeEnd))
+  const midPoint = Math.round(safeFadeStart + (safeFadeEnd - safeFadeStart) * 0.5)
+  const latePoint = Math.round(safeFadeStart + (safeFadeEnd - safeFadeStart) * 0.8)
+
+  const verticalMask = safeFadeStart >= 100
+    ? 'none'
+    : `linear-gradient(to bottom, black 0%, black ${safeFadeStart}%, rgba(0,0,0,0.65) ${midPoint}%, rgba(0,0,0,0.15) ${latePoint}%, transparent ${safeFadeEnd}%)`
+
+  const horizontalMask = sideFade > 0
+    ? `linear-gradient(to right, transparent 0%, black ${sideFade}%, black ${100 - sideFade}%, transparent 100%)`
+    : 'none'
+
   return (
-    <div ref={containerRef} className="absolute inset-0 z-0 w-full h-full overflow-hidden select-none">
-      <style>{`
-        .honeycomb-hex {
-          transform: scale(1);
-          transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                      fill 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                      stroke 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                      filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-          transform-box: view-box;
-          z-index: 1;
-        }
-        .glowing-hex {
-          transform: scale(1.08);
-          fill: rgba(59, 130, 246, 0.12);
-          stroke: #3b82f6; 
-          stroke-width: 4px;
-          filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
-          z-index: 10;
-        }
-        .honeycomb-hex-logo {
-          transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                      filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-          transform-box: view-box;
-        }
-      `}</style>
-      {dimensions.width > 0 && dimensions.height > 0 && (
-        <svg
-          ref={svgRef}
-          className="w-full h-full block cursor-pointer"
-          style={{ pointerEvents: 'auto' }}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={() => setHoveredCell(null)}
-        >
-          <defs>
-            <radialGradient id="honeycomb-mask-grad" cx="50%" cy="50%" r="50%">
-              <stop offset="60%" stopColor="white" />
-              <stop offset="80%" stopColor="black" />
-            </radialGradient>
-            <mask id="honeycomb-mask">
-              <rect width="100%" height="100%" fill="url(#honeycomb-mask-grad)" />
-            </mask>
-          </defs>
-
-          {hexagons.map(({ id, col, row, x, y, points }) => {
-            const isActive = hoveredCell
-              ? isNeighbor(col, row, hoveredCell.col, hoveredCell.row)
-              : false
-
-            const originX = hoveredCell ? hoveredCell.x + halfWidth : x + halfWidth
-            const originY = hoveredCell ? hoveredCell.y + halfHeight : y + halfHeight
-
-            const logoIndex = Math.abs(col * 3 + row * 7) % techLogos.length
-            const logo = techLogos[logoIndex]
-
-            return (
-              <React.Fragment key={id}>
+    <div 
+      ref={containerRef} 
+      className="absolute inset-0 z-0 w-full h-full overflow-hidden select-none"
+      style={{
+        WebkitMaskImage: verticalMask,
+        maskImage: verticalMask,
+      }}
+    >
+      <div 
+        className="w-full h-full"
+        style={{
+          WebkitMaskImage: horizontalMask,
+          maskImage: horizontalMask,
+        }}
+      >
+        <style>{`
+          .honeycomb-hex {
+            transition: fill 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                        stroke 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                        filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          .glowing-hex {
+            fill: rgba(16, 185, 129, 0.15);
+            stroke: #10b981; 
+            stroke-width: 2.8px;
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.65));
+          }
+          .honeycomb-hex-logo {
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                        filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-box: view-box;
+          }
+        `}</style>
+        {dimensions.width > 0 && dimensions.height > 0 && (
+          <svg
+            ref={svgRef}
+            className="w-full h-full block cursor-pointer"
+            style={{ pointerEvents: 'auto' }}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={() => setHoveredCell(null)}
+          >
+            {/* Layer 1: Inactive Background Hexagons */}
+            <g id="inactive-hexagons">
+              {inactiveHexes.map(({ cell }) => (
                 <polygon
-                  points={points}
-                  mask={isActive ? undefined : 'url(#honeycomb-mask)'}
-                  className={`honeycomb-hex ${
-                    isActive ? 'glowing-hex' : 'fill-transparent stroke-slate-300/30 stroke-[1.2px]'
-                  } pointer-events-none`}
-                  style={{
-                    transformOrigin: `${originX}px ${originY}px`,
-                  }}
+                  key={cell.id}
+                  points={cell.points}
+                  className="honeycomb-hex fill-transparent stroke-zinc-800/90 stroke-[1.2px] pointer-events-none"
                 />
-                {logo && (
-                  <image
-                    href={logo.src}
-                    x={x + (HEX_WIDTH - LOGO_SIZE) / 2}
-                    y={y + (HEX_HEIGHT - LOGO_SIZE) / 2}
-                    width={LOGO_SIZE}
-                    height={LOGO_SIZE}
-                    mask={isActive ? undefined : 'url(#honeycomb-mask)'}
-                    className="honeycomb-hex-logo pointer-events-none"
-                    style={{
-                      transformOrigin: `${originX}px ${originY}px`,
-                      transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                      filter: isActive 
-                        ? 'brightness(0) opacity(0.7) drop-shadow(0 0 3px rgba(59, 130, 246, 0.4))' 
-                        : 'brightness(0) opacity(0)',
-                    }}
+              ))}
+            </g>
+
+            {/* Layer 2: Active Glowing Hexagons (Rendered on top so strokes stay clean with zero overlapping lines) */}
+            <g id="active-hexagons">
+              {activeHexes.map(({ cell, logo }) => (
+                <React.Fragment key={cell.id}>
+                  <polygon
+                    points={cell.points}
+                    className="honeycomb-hex glowing-hex pointer-events-none"
                   />
-                )}
-              </React.Fragment>
-            )
-          })}
-        </svg>
+                  {logo && (
+                    <image
+                      href={logo.src}
+                      x={cell.x + (HEX_WIDTH - LOGO_SIZE) / 2}
+                      y={cell.y + (HEX_HEIGHT - LOGO_SIZE) / 2}
+                      width={LOGO_SIZE}
+                      height={LOGO_SIZE}
+                      className="honeycomb-hex-logo pointer-events-none"
+                      style={{
+                        transformOrigin: `${cell.centerX}px ${cell.centerY}px`,
+                        transform: 'scale(1.08)',
+                        filter: 'brightness(0) invert(1) drop-shadow(0 0 6px rgba(16, 185, 129, 0.8))',
+                      }}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </g>
+          </svg>
+        )}
+      </div>
+
+      {/* Smooth bottom & top ambient fade overlays */}
+      {bottomOverlayHeight > 0 && (
+        <div 
+          className="absolute inset-x-0 bottom-0 pointer-events-none" 
+          style={{
+            height: `${bottomOverlayHeight}px`,
+            background: `linear-gradient(to top, #090d0b 0%, rgba(9, 13, 11, ${bottomOverlayOpacity}) 60%, transparent 100%)`
+          }}
+        />
+      )}
+      {topOverlayHeight > 0 && (
+        <div 
+          className="absolute inset-x-0 top-0 pointer-events-none" 
+          style={{
+            height: `${topOverlayHeight}px`,
+            background: 'linear-gradient(to bottom, rgba(9, 13, 11, 0.8) 0%, transparent 100%)'
+          }}
+        />
       )}
     </div>
   )

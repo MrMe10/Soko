@@ -4,13 +4,13 @@ export const LandingTechStack: React.FC = () => {
   return (
     <div className="mt-28 w-full max-w-5xl text-center space-y-10 relative z-30 mb-12">
       <div className="space-y-3">
-        <span className="text-[11px] font-mono font-bold tracking-widest text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-3.5 py-1 rounded-full">
+        <span className="text-[11px] font-mono font-bold tracking-widest text-emerald-400 uppercase bg-emerald-950/50 border border-emerald-800/60 px-3.5 py-1 rounded-full">
           Ecosystem
         </span>
-        <h2 className="text-3xl md:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white tracking-tight">
           Build your perfect Tech Stack
         </h2>
-        <p className="text-sm text-slate-500 max-w-lg mx-auto">
+        <p className="text-sm text-zinc-400 max-w-lg mx-auto">
           Soko integrates seamlessly with industry-leading frontend frameworks, backend web runtimes, and distributed databases.
         </p>
       </div>
@@ -28,7 +28,7 @@ export const LandingTechStack: React.FC = () => {
         ].map((tech) => (
           <div
             key={tech.name}
-            className="group relative bg-white border border-slate-200/80 hover:border-indigo-300 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 transition-all duration-350 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-indigo-50/50 cursor-pointer"
+            className="group relative bg-zinc-900/80 border border-zinc-800 hover:border-emerald-500/60 hover:bg-zinc-800/90 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 transition-all duration-350 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-950/40 cursor-pointer"
           >
             <div className="w-12 h-12 flex items-center justify-center relative overflow-hidden">
               <img
@@ -38,10 +38,10 @@ export const LandingTechStack: React.FC = () => {
               />
             </div>
             <div className="text-center">
-              <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+              <div className="text-xs font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">
                 {tech.name}
               </div>
-              <div className="text-[9px] font-mono text-slate-400 mt-0.5">
+              <div className="text-[9px] font-mono text-zinc-400 mt-0.5">
                 {tech.desc}
               </div>
             </div>

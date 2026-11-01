@@ -5,10 +5,12 @@
  * Ensures output is accessible to first-time developers while remaining precise and actionable.
  */
 
+import type { ArchitectureType } from '../components/dashboard/create/createProjectData'
+
 export interface ProjectPromptInput {
   name: string
   description?: string
-  type: 'separate' | 'fullstack'
+  type: ArchitectureType
   assignedTechs: Record<string, string>
 }
 

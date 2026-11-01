@@ -8,25 +8,27 @@ interface LandingHeroProps {
 export const LandingHero: React.FC<LandingHeroProps> = ({ onEnterDashboard }) => {
   return (
     // Changed from a Fragment (<>) to a relative container wrapping the hero area context
-    <div className="w-full min-h-[70vh] flex flex-col items-center justify-center relative px-6 overflow-hidden">
-      
+    <div className="w-full min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
+
       {/* 🐝 THE INTERACTIVE HONEYCOMB BACKGROUND LAYER */}
-      {/* Absolute positioning pushes it behind text elements, while the radial mask concentrates the texture around the content headings */}
-      <div className="absolute inset-0 z-0">
+      {/* Absolute positioning covers the whole screen behind text elements */}
+      <div className="absolute inset-0 z-0 w-full h-full">
         <InteractiveHoneycomb />
       </div>
 
       {/* Hero Headline Content */}
-      <div className="text-center max-w-3xl space-y-6 relative z-30 pt-10 pointer-events-none">
+      <div className="text-center max-w-3xl space-y-6 relative z-30 pt-16 pointer-events-auto">
 
         {/* Headline */}
-        <h1 className="text-5xl md:text-6xl font-display font-extrabold tracking-tight text-slate-900 leading-[1.08] select-none">
+        <h1 className="text-5xl md:text-6xl font-display font-extrabold tracking-tight text-white leading-[1.08] select-none">
           Organize your warehouse <br />
-          in space.
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-300">
+            in space.
+          </span>
         </h1>
 
         {/* Subheading */}
-        <p className="text-base md:text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
+        <p className="text-base md:text-lg text-zinc-400 max-w-xl mx-auto leading-relaxed font-normal">
           Every physical storage shelf, data block, and transfer log. Mapped geometrically in real-time.
         </p>
 
@@ -34,10 +36,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onEnterDashboard }) =>
         <div className="pt-2">
           <button
             onClick={onEnterDashboard}
-            className="bg-black hover:bg-slate-800 text-white rounded-full px-8 py-4 font-semibold text-sm shadow-md hover:shadow-xl transition-all inline-flex items-center gap-2.5 cursor-pointer relative group border-none pointer-events-auto"
+            className="bg-emerald-500 hover:bg-emerald-400 text-black rounded-full px-8 py-4 font-extrabold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/50 transition-all inline-flex items-center gap-2.5 cursor-pointer relative group border-none pointer-events-auto active:scale-95"
           >
-            {/* Green indicator dot */}
-            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+            {/* White indicator dot */}
+            <span className="w-2 h-2 bg-black rounded-full animate-pulse" />
             <span>Launch Soko Console</span>
           </button>
         </div>

@@ -5,19 +5,23 @@
  * the central project card, handling drop target highlighting, hover feedback, and assigned tech badges.
  */
 
-import React from 'react'
+import React, { useState } from 'react'
 import {
   getSurroundingNodes,
-  TECH_DETAILS,
-  PRE_RESIZE_SCALE
+  getTechDetails,
+  PRE_RESIZE_SCALE,
+  HEX_POINTS,
+  HEX_ORIGIN,
+  HEX_PUSH_FACTOR
 } from './createProjectData'
+import type { ArchitectureType } from './createProjectData'
 
 interface SurroundingHexNodesProps {
   isSelected: boolean
   isExpanded: boolean
   isPushedOut: boolean
   isStackShrunk: boolean
-  selectedType: 'separate' | 'fullstack'
+  selectedType: ArchitectureType
   assignedTechs: Record<string, string>
   hoveredCellId: string | null
   draggedTech: { name: string; category: string } | null
@@ -35,6 +39,8 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
   draggedTech,
   onUnassignTech
 }) => {
+  const [mouseHoveredId, setMouseHoveredId] = useState<string | null>(null)
+
   if (!isSelected) return null
 
   const nodesList = getSurroundingNodes(selectedType)
@@ -42,11 +48,11 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
   const sortedNodes = [...nodesList].sort((a, b) => {
     const aAssigned = Boolean(assignedTechs[a.id])
     const bAssigned = Boolean(assignedTechs[b.id])
-    const aHovered = hoveredCellId === a.id
-    const bHovered = hoveredCellId === b.id
+    const aHovered = hoveredCellId === a.id || mouseHoveredId === a.id
+    const bHovered = hoveredCellId === b.id || mouseHoveredId === b.id
 
     const getWeight = (id: string, assigned: boolean, hovered: boolean) => {
-      if (hovered) return 3
+      if (hovered) return 4
       if (assigned) return 2
       const cat = nodesList.find((n) => n.id === id)?.category
       const isComp = draggedTech ? cat === draggedTech.category : false
@@ -76,14 +82,44 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
         const isHoveredInvalid = isHoveredTarget && !isCompatible
         const isTargetGlowing = isDraggingActive && isCompatible && !isHoveredTarget
 
-        const details = assignedTech ? TECH_DETAILS[assignedTech] : null
-        const AssignedLogo = details?.logo
-        const AssignedMockIcon = details?.mockupIcon || NodeIcon
+        const isMouseHovered =
+          !isDraggingActive &&
+          (mouseHoveredId === id ||
+            (selectedType === 'fullstack' &&
+              (id === 'top-left' || id === 'top-right') &&
+              (mouseHoveredId === 'top-left' || mouseHoveredId === 'top-right') &&
+              Boolean(assignedTechs['top-left'] || assignedTechs['top-right'])))
+
+        // Calculate enlargement scale
+        const scale = isStackShrunk
+          ? 1
+          : isHoveredValid
+          ? 1.12
+          : isHoveredInvalid
+          ? 0.95
+          : isTargetGlowing
+          ? 1.04
+          : isMouseHovered && assignedTech
+          ? 1.08
+          : isMouseHovered
+          ? 1.04
+          : 1
+
+        // Radial outward translation to prevent overlapping/underlapping adjacent or central cells
+        const scaleDiff = Math.max(0, scale - 1)
+        const currentDx = dx + dx * scaleDiff * HEX_PUSH_FACTOR
+        const currentDy = dy + dy * scaleDiff * HEX_PUSH_FACTOR
+
+        const details = getTechDetails(assignedTech)
+        const AssignedLogo = details.logo
+        const AssignedMockIcon = details.mockupIcon || NodeIcon
 
         return (
           <g
             key={id}
             data-cell-id={id}
+            onMouseEnter={() => !draggedTech && setMouseHoveredId(id)}
+            onMouseLeave={() => !draggedTech && setMouseHoveredId(null)}
             onClick={() => {
               if (assignedTech && !draggedTech) {
                 onUnassignTech(id)
@@ -93,42 +129,52 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
             style={{
               transform:
                 isExpanded || isPushedOut
-                  ? `translate(${dx}px, ${dy}px) scale(${isHoveredValid ? 1.1 : isHoveredInvalid ? 0.95 : isTargetGlowing ? 1.04 : 1})`
+                  ? `translate(${currentDx}px, ${currentDy}px) scale(${scale})`
                   : `translate(0px, 0px) scale(${PRE_RESIZE_SCALE})`,
-              transformOrigin: '120px 131.5px',
+              transformOrigin: HEX_ORIGIN,
               opacity: isPushedOut ? (isDraggingActive && !isCompatible && !assignedTech ? 0.4 : 1) : 0,
-              transitionProperty: 'transform, opacity',
+              filter:
+                isHoveredValid || (isMouseHovered && assignedTech)
+                  ? 'drop-shadow(0 10px 22px rgba(16, 185, 129, 0.4))'
+                  : isTargetGlowing
+                  ? 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.25))'
+                  : undefined,
+              transitionProperty: 'transform, opacity, filter',
               transitionDuration: isStackShrunk ? '500ms' : isExpanded ? '300ms' : '450ms',
               transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
             <polygon
-              points="120,5 230,68 230,195 120,258 10,195 10,68"
+              points={HEX_POINTS}
               fill={
                 isStackShrunk
-                  ? '#ffffff'
+                  ? '#090d0b'
                   : assignedTech
-                  ? '#ffffff'
+                  ? '#121214'
                   : isHoveredValid
-                  ? '#e0e7ff'
+                  ? '#064e3b'
                   : isHoveredInvalid
-                  ? '#fef2f2'
+                  ? '#450a0a'
                   : isTargetGlowing
-                  ? '#f5f7ff'
-                  : '#ffffff'
+                  ? '#062e22'
+                  : isMouseHovered
+                  ? '#18181b'
+                  : '#0f1311'
               }
               stroke={
                 isStackShrunk
-                  ? '#6366f1'
+                  ? '#10b981'
                   : assignedTech
-                  ? '#6366f1'
+                  ? '#10b981'
                   : isHoveredValid
-                  ? '#6366f1'
+                  ? '#10b981'
                   : isHoveredInvalid
                   ? '#ef4444'
                   : isTargetGlowing
-                  ? '#818cf8'
-                  : '#cbd5e1'
+                  ? '#34d399'
+                  : isMouseHovered
+                  ? '#52525b'
+                  : '#27272a'
               }
               strokeWidth={
                 isStackShrunk
@@ -139,6 +185,8 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                   ? '3'
                   : isTargetGlowing
                   ? '2.5'
+                  : isMouseHovered
+                  ? '2.2'
                   : '1.8'
               }
               strokeDasharray={
@@ -165,14 +213,14 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                     assignedTech
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/30'
                       : isHoveredValid
-                      ? 'bg-indigo-100 text-indigo-600'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                       : isHoveredInvalid
-                      ? 'bg-red-100 text-red-500'
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                       : isTargetGlowing
-                      ? 'bg-indigo-100/90 text-indigo-600 shadow-xs'
-                      : 'bg-slate-200/70 text-slate-400'
+                      ? 'bg-emerald-500/15 text-emerald-400 shadow-xs border border-emerald-500/30'
+                      : 'bg-zinc-800 text-zinc-400'
                   }`}
                 >
                   {assignedTech && AssignedLogo ? (
@@ -184,22 +232,24 @@ export const SurroundingHexNodes: React.FC<SurroundingHexNodesProps> = ({
                 <span
                   className={`text-[11px] tracking-tight ${
                     assignedTech
-                      ? 'font-extrabold text-slate-900'
+                      ? 'font-extrabold text-white'
                       : isHoveredInvalid
-                      ? 'font-bold text-red-500'
+                      ? 'font-bold text-red-400'
                       : isTargetGlowing
-                      ? 'font-extrabold text-indigo-600'
-                      : 'font-semibold text-slate-400'
+                      ? 'font-extrabold text-emerald-400'
+                      : isMouseHovered
+                      ? 'font-bold text-zinc-200'
+                      : 'font-semibold text-zinc-500'
                   }`}
                 >
                   {assignedTech || (isHoveredInvalid ? 'Mismatched Layer' : label)}
                 </span>
                 {assignedTech ? (
-                  <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100 uppercase font-mono">
+                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800/80 uppercase font-mono">
                     {label}
                   </span>
                 ) : isTargetGlowing ? (
-                  <span className="text-[8.5px] font-extrabold text-indigo-500 tracking-wider uppercase font-mono animate-pulse">
+                  <span className="text-[8.5px] font-extrabold text-emerald-400 tracking-wider uppercase font-mono animate-pulse">
                     Drop Here
                   </span>
                 ) : null}

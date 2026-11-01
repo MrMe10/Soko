@@ -6,8 +6,12 @@
  */
 
 import React from 'react'
-import { Layers } from 'lucide-react'
-import { getSurroundingNodes, TECH_DETAILS } from './createProjectData'
+import {
+  getSurroundingNodes,
+  getTechDetails,
+  PREVIEW_HEX_POINTS
+} from './createProjectData'
+import type { ArchitectureType } from './createProjectData'
 
 interface TechDragPreviewsProps {
   draggedTech: { name: string; category: string } | null
@@ -22,7 +26,7 @@ interface TechDragPreviewsProps {
     toY: number
   } | null
   isReturningAnim: boolean
-  selectedType: 'separate' | 'fullstack'
+  selectedType: ArchitectureType
 }
 
 export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
@@ -40,9 +44,9 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
         const nodesList = getSurroundingNodes(selectedType)
         const hoveredNode = hoveredCellId ? nodesList.find((n) => n.id === hoveredCellId) : null
         const isHoveredInvalid = Boolean(hoveredNode && hoveredNode.category !== draggedTech.category)
-        const details = TECH_DETAILS[draggedTech.name] || {}
+        const details = getTechDetails(draggedTech.name)
         const LogoImg = details.logo
-        const MockupIcon = details.mockupIcon || Layers
+        const MockupIcon = details.mockupIcon
 
         return (
           <div
@@ -55,13 +59,13 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
                 className={`w-full h-full overflow-visible ${
                   isHoveredInvalid
                     ? 'drop-shadow-[0_10px_25px_rgba(239,68,68,0.5)]'
-                    : 'drop-shadow-[0_10px_25px_rgba(99,102,241,0.55)]'
+                    : 'drop-shadow-[0_10px_25px_rgba(16,185,129,0.55)]'
                 }`}
               >
                 <polygon
-                  points="60,2.5 115,34 115,96 60,127.5 5,96 5,34"
-                  fill="#ffffff"
-                  stroke={isHoveredInvalid ? '#ef4444' : '#6366f1'}
+                  points={PREVIEW_HEX_POINTS}
+                  fill="#0f1311"
+                  stroke={isHoveredInvalid ? '#ef4444' : '#10b981'}
                   strokeWidth="4"
                 />
               </svg>
@@ -71,18 +75,18 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
                 ) : (
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      isHoveredInvalid ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600'
+                      isHoveredInvalid ? 'bg-red-950/60 text-red-400 border border-red-500/40' : 'bg-zinc-800 text-emerald-400 border border-zinc-700'
                     }`}
                   >
-                    <MockupIcon className="w-4.5 h-4.5" />
+                    {MockupIcon && <MockupIcon className="w-4.5 h-4.5" />}
                   </div>
                 )}
-                <span className="text-[10.5px] font-extrabold text-slate-900 leading-tight max-w-[80px] break-words">
+                <span className="text-[10.5px] font-extrabold text-white leading-tight max-w-[80px] break-words">
                   {draggedTech.name}
                 </span>
                 <span
                   className={`text-[7.5px] font-extrabold uppercase tracking-wider font-mono ${
-                    isHoveredInvalid ? 'text-red-500' : 'text-indigo-500'
+                    isHoveredInvalid ? 'text-red-400' : 'text-emerald-400'
                   }`}
                 >
                   {draggedTech.category}
@@ -95,9 +99,9 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
 
       {/* Floating Returning Hexagon Preview Animation */}
       {returningTech && (() => {
-        const details = TECH_DETAILS[returningTech.name] || {}
+        const details = getTechDetails(returningTech.name)
         const LogoImg = details.logo
-        const MockupIcon = details.mockupIcon || Layers
+        const MockupIcon = details.mockupIcon
         const curX = isReturningAnim ? returningTech.toX : returningTech.fromX
         const curY = isReturningAnim ? returningTech.toY : returningTech.fromY
 
@@ -113,17 +117,17 @@ export const TechDragPreviews: React.FC<TechDragPreviewsProps> = ({
           >
             <div className="relative w-[86px] h-[96px] sm:w-[94px] sm:h-[104px] flex flex-col items-center justify-center">
               <svg viewBox="0 0 120 135" className="absolute inset-0 w-full h-full overflow-visible drop-shadow-sm">
-                <polygon points="60,2.5 115,34 115,96 60,127.5 5,96 5,34" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.8" />
+                <polygon points={PREVIEW_HEX_POINTS} fill="#0f1311" stroke="#27272a" strokeWidth="1.8" />
               </svg>
               <div className="relative z-10 flex flex-col items-center justify-center text-center p-1.5 space-y-1">
                 {LogoImg ? (
                   <img src={LogoImg} alt={returningTech.name} className="w-9 h-9 object-contain" />
                 ) : (
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center">
-                    <MockupIcon className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-zinc-800 border border-zinc-700 text-emerald-400 flex items-center justify-center">
+                    {MockupIcon && <MockupIcon className="w-5 h-5" />}
                   </div>
                 )}
-                <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-900 leading-tight max-w-[74px] sm:max-w-[80px] text-center line-clamp-2 break-words">
+                <span className="text-[10px] sm:text-[10.5px] font-extrabold text-zinc-100 leading-tight max-w-[74px] sm:max-w-[80px] text-center line-clamp-2 break-words">
                   {returningTech.name}
                 </span>
               </div>

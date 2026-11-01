@@ -16,8 +16,10 @@ import {
   ENLARGED_HEXAGON_SCALE,
   FINAL_HEXAGON_SCALE,
   CENTERING_SPEED_MS,
-  LOADING_MESSAGES
+  LOADING_MESSAGES,
+  HEX_POINTS
 } from './createProjectData'
+import type { ArchitectureType } from './createProjectData'
 import { SetupSelectionHeader, SetupSelectionFooter } from './SetupSelectionHeader'
 import { ProjectDetailsForm } from './ProjectDetailsForm'
 import { TechStackDrawer } from './TechStackDrawer'
@@ -26,12 +28,12 @@ import { BuildingStatusOverlay } from './BuildingStatusOverlay'
 import { TechDragPreviews } from './TechDragPreviews'
 
 export interface CreateProjectViewProps {
-  onCreateProject?: (project: { name: string; description: string; type: 'separate' | 'fullstack' }) => void
+  onCreateProject?: (project: { name: string; description: string; type: ArchitectureType }) => void
   onCancel?: () => void
 }
 
 export default function CreateProjectView({ onCreateProject }: CreateProjectViewProps) {
-  const [selectedType, setSelectedType] = useState<'separate' | 'fullstack'>('separate')
+  const [selectedType, setSelectedType] = useState<ArchitectureType>('separate')
   const [projectName, setProjectName] = useState('Decoupled Storehouse')
   const [projectDescription, setProjectDescription] = useState('')
   const [isConfirmed, setIsConfirmed] = useState(false) // Step 1: Fade out elements & glide to center
@@ -52,19 +54,14 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
       return
     }
 
+    if (isBuildComplete) return
+
     const interval = setInterval(() => {
-      setLoadingMessageIndex((prev) => {
-        if (prev >= LOADING_MESSAGES.length - 1) {
-          setIsBuildComplete(true)
-          clearInterval(interval)
-          return prev
-        }
-        return prev + 1
-      })
-    }, 1800)
+      setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length)
+    }, 1200)
 
     return () => clearInterval(interval)
-  }, [isStackShrunk])
+  }, [isStackShrunk, isBuildComplete])
 
   // Draggable tech pill state
   const [draggedTech, setDraggedTech] = useState<{ name: string; category: string } | null>(null)
@@ -206,7 +203,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
     }
   }, [draggedTech, assignedTechs, dragPos, dragOriginPos, activeStepIndex, selectedType])
 
-  const handleSelectType = (type: 'separate' | 'fullstack') => {
+  const handleSelectType = (type: ArchitectureType) => {
     setSelectedType(type)
     setProjectName(type === 'separate' ? 'Decoupled Storehouse' : 'Fullstack Storehouse')
     setAssignedTechs({})
@@ -280,9 +277,11 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
   }
 
   return (
-    <div className="relative min-h-[75vh] w-full flex flex-col items-center justify-center py-6 px-4 overflow-x-clip">
+    <div className={`relative min-h-[75vh] w-full flex flex-col ${
+      isBuildComplete && isStackShrunk ? 'items-start justify-start pt-2 sm:pt-4 px-4 sm:px-8 md:px-12 pb-20' : 'items-center justify-center py-6 px-4'
+    } overflow-x-clip transition-all duration-500`}>
       {/* Background Subtle Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       {/* Stage 3: Tech Stack Drawer */}
       <TechStackDrawer
@@ -295,8 +294,6 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
         assignedTechs={assignedTechs}
         draggedTech={draggedTech}
         returningTech={returningTech}
-        projectName={projectName}
-        projectDescription={projectDescription}
         selectedType={selectedType}
         onStepChange={handleStepChange}
         onStartDrag={handleStartDrag}
@@ -311,12 +308,12 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
       {/* Stage 1: Setup Selection Header */}
       <SetupSelectionHeader
         isConfirmed={isConfirmed}
-        selectedType={selectedType}
-        onContinue={handleContinue}
       />
 
       {/* Hexagon Options Container */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-14 my-4 w-full max-w-4xl">
+      <div className={`flex flex-col md:flex-row items-center justify-center gap-8 md:gap-14 my-4 w-full max-w-4xl transition-all duration-500 ${
+        isBuildComplete && isStackShrunk ? 'h-0 opacity-0 my-0 overflow-hidden pointer-events-none' : ''
+      }`}>
         {OPTIONS.map(({ type, title, desc, Icon }) => {
           const isSelected = selectedType === type
           const isUnselected = !isSelected
@@ -391,6 +388,15 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                   viewBox="0 0 240 270"
                   fill="none"
                 >
+                  {/* Main Central Hexagon */}
+                  <polygon
+                    points={HEX_POINTS}
+                    fill={isStackShrunk ? '#090d0b' : '#121214'}
+                    stroke={isStackShrunk ? '#10b981' : isSelected ? '#10b981' : '#27272a'}
+                    strokeWidth={isStackShrunk ? '12' : isSelected ? (isScaled && !isSubmitted ? '5' : '4') : '2'}
+                    className="transition-all duration-300 group-hover:stroke-emerald-400"
+                  />
+
                   {/* Surrounding Outer Hex Nodes */}
                   <SurroundingHexNodes
                     isSelected={isSelected}
@@ -413,15 +419,6 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
                         return next
                       })
                     }}
-                  />
-
-                  {/* Main Central Hexagon */}
-                  <polygon
-                    points="120,5 230,68 230,195 120,258 10,195 10,68"
-                    fill="#ffffff"
-                    stroke={isStackShrunk ? '#6366f1' : isSelected ? '#6366f1' : '#e2e8f0'}
-                    strokeWidth={isStackShrunk ? '12' : isSelected ? (isScaled && !isSubmitted ? '5' : '4') : '2'}
-                    className="transition-all duration-300 group-hover:stroke-indigo-400"
                   />
                 </svg>
 
@@ -460,6 +457,7 @@ export default function CreateProjectView({ onCreateProject }: CreateProjectView
         isSubmitted={isSubmitted}
         loadingMessageIndex={loadingMessageIndex}
         isBuildComplete={isBuildComplete}
+        onBuildComplete={() => setIsBuildComplete(true)}
         onResetAnimation={handleResetAnimation}
         onCompleteProject={handleCompleteProject}
         projectName={projectName}
